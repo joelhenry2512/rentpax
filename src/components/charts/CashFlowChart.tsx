@@ -39,7 +39,7 @@ export default function CashFlowChart({ data }: CashFlowChartProps) {
           />
           <Bar 
             dataKey="amount" 
-            fill={(entry: any) => entry.color}
+            fill="#3b82f6"
             radius={[4, 4, 0, 0]}
           />
         </BarChart>
