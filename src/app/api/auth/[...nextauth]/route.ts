@@ -25,4 +25,4 @@ const auth = NextAuth({
   session: { strategy: "jwt" }
 });
 
-export const { GET, POST } = auth;
+export { auth as GET, auth as POST };
