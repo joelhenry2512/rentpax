@@ -5,7 +5,7 @@ const bcrypt = require("bcryptjs");
 
 const prisma = new PrismaClient();
 
-const auth = NextAuth({
+const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Credentials({
       credentials: {
@@ -25,4 +25,4 @@ const auth = NextAuth({
   session: { strategy: "jwt" }
 });
 
-export { auth as GET, auth as POST };
+export const { GET, POST } = handlers;
