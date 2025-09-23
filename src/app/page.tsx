@@ -135,7 +135,7 @@ export default function Home() {
         <div className="grid md:grid-cols-5 gap-3 items-center">
           <input className="input md:col-span-3" placeholder="123 Main St, City, ST" value={address} onChange={e=>setAddress(e.target.value)} />
           <input className="input" type="number" placeholder="Income (annual)" value={income} onChange={e=>setIncome(Number(e.target.value))} />
-          <button onClick={analyze} className="btn-primary">{loading ? "Analyzing..." : "Analyze My Property"}</button>
+          <button onClick={() => analyze()} className="btn-primary">{loading ? "Analyzing..." : "Analyze My Property"}</button>
         </div>
         <div className="mt-4 grid md:grid-cols-3 gap-3">
           <div className="card">
