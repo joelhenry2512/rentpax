@@ -52,12 +52,37 @@ export default function AnalysisResults({
               className={data.finance.cashFlow >= 0 ? "text-green-600" : "text-red-600"}
             />
             <LabelValue label="Cap Rate" value={`${(data.finance.capRate*100).toFixed(2)}%`} />
+            <LabelValue 
+              label="Affordable?" 
+              value={data.finance.PITI <= data.affordability.maxPITIByDTI ? 'Yes' : 'No'}
+              className={data.finance.PITI <= data.affordability.maxPITIByDTI ? 'text-green-600' : 'text-red-600'}
+            />
           </div>
         </div>
         
         <div className="card">
-          <h2 className="text-xl font-semibold mb-4">Affordability</h2>
-          <LabelValue label="Max PITI by DTI" value={`$${data.affordability.maxPITIByDTI.toFixed(0)}/mo`} />
+          <h2 className="text-xl font-semibold mb-4">Affordability Analysis</h2>
+          <div className="space-y-3">
+            <LabelValue 
+              label="Monthly Income" 
+              value={`$${data.affordability.incomeMonthly.toFixed(0)}`} 
+              className="text-green-600 font-semibold"
+            />
+            <LabelValue 
+              label="Max PITI by DTI" 
+              value={`$${data.affordability.maxPITIByDTI.toFixed(0)}/mo`}
+              className="text-blue-600 font-semibold"
+            />
+            <div className="mt-2 p-3 bg-gray-50 rounded-lg">
+              <div className="text-sm text-gray-600 mb-1">Affordability Status:</div>
+              <div className={`font-semibold ${data.finance.PITI <= data.affordability.maxPITIByDTI ? 'text-green-600' : 'text-red-600'}`}>
+                {data.finance.PITI <= data.affordability.maxPITIByDTI ? '✅ Affordable' : '❌ Not Affordable'}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                PITI: ${data.finance.PITI.toFixed(0)} vs Max: ${data.affordability.maxPITIByDTI.toFixed(0)}
+              </div>
+            </div>
+          </div>
           <div className="mt-4 space-y-2">
             <button className="btn-secondary w-full" onClick={onSaveIncome}>
               Save my income

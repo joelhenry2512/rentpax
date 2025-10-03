@@ -4,6 +4,7 @@ import SettingsDrawer from "@/components/SettingsDrawer";
 import ScenarioCompare from "@/components/ScenarioCompare";
 import CompsSelector from "@/components/CompsSelector";
 import AnalysisResults from "@/components/analysis/AnalysisResults";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
 import { saveProperty } from "@/services/portfolio";
 
 type RentCastComp = {
@@ -50,26 +51,51 @@ export default function Home() {
   const [selectedComps, setSelectedComps] = useState<string[]>([]);
 
   async function analyze(customRent?: number) {
+    if (!address.trim()) {
+      alert("Please enter an address");
+      return;
+    }
+    
     setLoading(true);
     setData(null);
-    const res = await fetch("/api/analyze", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        address,
-        incomeAnnual: Number(income),
-        interestRate: rate / 100,
-        downPaymentPercent: down / 100,
-        vacancyRate: vacancy/100,
-        maintenanceRate: maint/100,
-        managementRate: mgmt/100,
-        customRent,
-        selectedCompIds: selectedComps
-      })
-    });
-    const json = await res.json();
-    setData(json);
-    setLoading(false);
+    
+    try {
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          address,
+          incomeAnnual: Number(income),
+          interestRate: rate / 100,
+          loanTermYears: 30,
+          downPaymentPercent: down / 100,
+          vacancyRate: vacancy/100,
+          maintenanceRate: maint/100,
+          managementRate: mgmt/100,
+          otherDebtMonthly: 0,
+          includePMI: true,
+          customRent,
+          selectedCompIds: selectedComps
+        })
+      });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
+      const json = await res.json();
+      
+      if (json.error) {
+        throw new Error(json.error);
+      }
+      
+      setData(json);
+    } catch (error) {
+      console.error("Analysis error:", error);
+      alert(`Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setLoading(false);
+    }
   }
 
   // save income anonymously demo (replace with authed email on real app)
@@ -133,7 +159,12 @@ export default function Home() {
       
       <section className="card mb-6">
         <div className="grid md:grid-cols-5 gap-3 items-center">
-          <input className="input md:col-span-3" placeholder="123 Main St, City, ST" value={address} onChange={e=>setAddress(e.target.value)} />
+          <AddressAutocomplete
+            value={address}
+            onChange={setAddress}
+            placeholder="123 Main St, City, ST"
+            className="input md:col-span-3"
+          />
           <input className="input" type="number" placeholder="Income (annual)" value={income} onChange={e=>setIncome(Number(e.target.value))} />
           <button onClick={() => analyze()} className="btn-primary">{loading ? "Analyzing..." : "Analyze My Property"}</button>
         </div>

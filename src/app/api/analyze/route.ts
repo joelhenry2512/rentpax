@@ -121,6 +121,13 @@ export async function POST(req: Request) {
       affordability: aff
     });
   } catch (e: any) {
+    console.error("API Error:", e);
+    if (e.name === 'ZodError') {
+      return NextResponse.json({ 
+        error: "Invalid input data", 
+        details: e.errors 
+      }, { status: 400 });
+    }
     return NextResponse.json({ error: e.message }, { status: 400 });
   }
 }
