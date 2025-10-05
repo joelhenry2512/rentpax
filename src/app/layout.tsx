@@ -1,5 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import { SessionProvider } from "next-auth/react";
+import AuthHeader from "@/components/AuthHeader";
 
 export const metadata: Metadata = {
   title: "RentPax — Property & Rental Analysis",
@@ -10,20 +12,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <div className="container py-8">
-          <header className="flex items-center justify-between mb-6">
-            <div className="text-2xl font-bold">RentPax</div>
-            <nav className="space-x-3">
-              <a href="#" className="text-sm text-gray-600">Data Sources</a>
-              <a href="#" className="text-sm text-gray-600">About</a>
-              <a href="#" className="text-sm text-gray-600">Sign In</a>
-            </nav>
-          </header>
-          {children}
-          <footer className="mt-12 text-center text-xs text-gray-500">
-            © {new Date().getFullYear()} RentPax
-          </footer>
-        </div>
+        <SessionProvider>
+          <div className="container py-8">
+            <header className="flex items-center justify-between mb-6">
+              <div className="text-2xl font-bold">RentPax</div>
+              <AuthHeader />
+            </header>
+            {children}
+            <footer className="mt-12 text-center text-xs text-gray-500">
+              © {new Date().getFullYear()} RentPax
+            </footer>
+          </div>
+        </SessionProvider>
       </body>
     </html>
   );

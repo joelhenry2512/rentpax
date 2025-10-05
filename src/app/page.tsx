@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import SettingsDrawer from "@/components/SettingsDrawer";
 import ScenarioCompare from "@/components/ScenarioCompare";
 import CompsSelector from "@/components/CompsSelector";
@@ -39,6 +40,7 @@ type AnalyzeResponse = {
 };
 
 export default function Home() {
+  const { data: session } = useSession();
   const [address, setAddress] = useState("");
   const [income, setIncome] = useState(120000);
   const [rate, setRate] = useState(6.5);
@@ -98,28 +100,33 @@ export default function Home() {
     }
   }
 
-  // save income anonymously demo (replace with authed email on real app)
+  // save income to authenticated user's profile
   async function saveIncome() {
-    const email = prompt("Enter your account email to save income:");
-    if (!email) return;
+    if (!session?.user?.email) {
+      alert("Please sign in to save your income");
+      return;
+    }
+    
     await fetch("/api/profile", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, incomeAnnual: Number(income), otherDebtMonthly: 0 })
+      body: JSON.stringify({ email: session.user.email, incomeAnnual: Number(income), otherDebtMonthly: 0 })
     });
-    alert("Income saved to profile (demo).");
+    alert("Income saved to your profile!");
   }
 
   // save property to portfolio
   async function saveToPortfolio() {
     if (!data) return;
     
-    const email = prompt("Enter your account email to save this property:");
-    if (!email) return;
+    if (!session?.user?.email) {
+      alert("Please sign in to save properties to your portfolio");
+      return;
+    }
 
     try {
       await saveProperty({
-        email,
+        email: session.user.email,
         address: data.address,
         homeValue: data.property.avm,
         beds: data.property.beds,
@@ -152,9 +159,11 @@ export default function Home() {
           <h1 className="text-3xl font-bold mb-2">Find value, rent & cash flow in seconds</h1>
           <p className="text-gray-600">Enter an address and we'll estimate property value, rent, and cash flow. Tweak assumptions as needed.</p>
         </div>
-        <a href="/portfolio" className="btn-secondary">
-          View Portfolio
-        </a>
+        {session && (
+          <a href="/portfolio" className="btn-secondary">
+            View Portfolio
+          </a>
+        )}
       </div>
       
       <section className="card mb-6">
