@@ -10,9 +10,13 @@ export default function AuthHeader() {
   const handleSignOut = async () => {
     setIsSigningOut(true);
     try {
-      await signOut({ callbackUrl: "/" });
+      await signOut({ redirect: false });
+      // Force redirect to main domain to avoid Vercel deployment URL issues
+      window.location.href = "https://rentpaxmvpplus.vercel.app/";
     } catch (error) {
       console.error("Sign out error:", error);
+      // Fallback redirect
+      window.location.href = "https://rentpaxmvpplus.vercel.app/";
     } finally {
       setIsSigningOut(false);
     }
