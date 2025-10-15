@@ -30,7 +30,9 @@ export default function AddressAutocomplete({
     setLoading(true);
     
     try {
+      console.log("Searching addresses for:", query);
       const results = await searchAddresses(query);
+      console.log("Address search results:", results);
       setSuggestions(results);
     } catch (error) {
       console.error("Address search error:", error);
@@ -98,26 +100,35 @@ export default function AddressAutocomplete({
         onBlur={handleInputBlur}
         autoComplete="off"
       />
+      {value.length >= 3 && !loading && suggestions.length === 0 && (
+        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+          <div className="w-4 h-4 border-2 border-gray-300 rounded-full animate-pulse"></div>
+        </div>
+      )}
       
       {showSuggestions && (suggestions.length > 0 || loading) && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-xl max-h-60 overflow-y-auto">
           {loading ? (
-            <div className="px-4 py-2 text-gray-500 text-sm">
+            <div className="px-4 py-3 text-gray-500 text-sm">
               <div className="flex items-center">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
                 Searching addresses...
               </div>
             </div>
-          ) : (
+          ) : suggestions.length > 0 ? (
             suggestions.map((suggestion, index) => (
               <button
                 key={index}
-                className="w-full px-4 py-2 text-left hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                className="w-full px-4 py-3 text-left hover:bg-blue-50 focus:bg-blue-50 focus:outline-none border-b border-gray-100 last:border-b-0"
                 onClick={() => handleSuggestionClick(suggestion)}
               >
-                <div className="font-medium text-gray-900">{suggestion}</div>
+                <div className="font-medium text-gray-900 text-sm">{suggestion}</div>
               </button>
             ))
+          ) : (
+            <div className="px-4 py-3 text-gray-500 text-sm">
+              No addresses found
+            </div>
           )}
         </div>
       )}
