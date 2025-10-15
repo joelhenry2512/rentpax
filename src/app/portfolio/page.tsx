@@ -1,22 +1,23 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { Plus, Edit, Trash2, Eye, TrendingUp, TrendingDown } from "lucide-react";
 import { fetchPortfolio, deleteProperty, type SavedProperty } from "@/services/portfolio";
 import Link from "next/link";
 
 export default function PortfolioPage() {
-  const [email, setEmail] = useState("");
+  const { data: session, status } = useSession();
   const [properties, setProperties] = useState<SavedProperty[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const loadPortfolio = async () => {
-    if (!email) return;
+    if (!session?.user?.email) return;
     
     setLoading(true);
     setError("");
     try {
-      const portfolio = await fetchPortfolio(email);
+      const portfolio = await fetchPortfolio(session.user.email);
       setProperties(portfolio);
     } catch (err: any) {
       setError(err.message);
@@ -25,11 +26,23 @@ export default function PortfolioPage() {
     }
   };
 
+  // Auto-load portfolio when user is authenticated
+  useEffect(() => {
+    if (session?.user?.email) {
+      loadPortfolio();
+    }
+  }, [session]);
+
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this property?")) return;
     
+    if (!session?.user?.email) {
+      setError("You must be signed in to delete properties");
+      return;
+    }
+    
     try {
-      await deleteProperty(id, email);
+      await deleteProperty(id, session.user.email);
       setProperties(properties.filter(p => p.id !== id));
     } catch (err: any) {
       setError(err.message);
@@ -41,6 +54,37 @@ export default function PortfolioPage() {
   const avgCapRate = properties.length > 0 
     ? properties.reduce((sum, p) => sum + p.capRate, 0) / properties.length 
     : 0;
+
+  // Show loading state while checking authentication
+  if (status === "loading") {
+    return (
+      <main className="container mx-auto px-4 py-8">
+        <div className="card text-center py-12">
+          <div className="text-center">Loading...</div>
+        </div>
+      </main>
+    );
+  }
+
+  // Show sign-in prompt if not authenticated
+  if (!session) {
+    return (
+      <main className="container mx-auto px-4 py-8">
+        <div className="card text-center py-12">
+          <div className="text-gray-400 mb-4">
+            <Plus size={48} className="mx-auto" />
+          </div>
+          <h3 className="text-xl font-semibold mb-2">Sign In Required</h3>
+          <p className="text-gray-600 mb-4">
+            Please sign in to view your portfolio
+          </p>
+          <Link href="/login" className="btn-primary">
+            Sign In
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="container mx-auto px-4 py-8">
@@ -87,31 +131,14 @@ export default function PortfolioPage() {
         </div>
       )}
 
-      {/* Email Input */}
-      <div className="card mb-6">
-        <h2 className="text-xl font-semibold mb-4">Load Portfolio</h2>
-        <div className="flex gap-3">
-          <input
-            type="email"
-            placeholder="Enter your email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="input flex-1"
-          />
-          <button
-            onClick={loadPortfolio}
-            disabled={!email || loading}
-            className="btn-primary"
-          >
-            {loading ? "Loading..." : "Load Portfolio"}
-          </button>
-        </div>
-        {error && (
-          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700">
+      {/* Error Display */}
+      {error && (
+        <div className="card mb-6">
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700">
             {error}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Properties List */}
       {properties.length === 0 && !loading ? (

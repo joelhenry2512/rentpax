@@ -146,7 +146,12 @@ export default function Home() {
         capRate: data.finance.capRate,
         coc: data.finance.coc
       });
-      alert("Property saved to portfolio!");
+      
+      // Show success message with option to view portfolio
+      const viewPortfolio = confirm("Property saved to portfolio! Would you like to view your portfolio?");
+      if (viewPortfolio) {
+        window.location.href = "/portfolio";
+      }
     } catch (error: any) {
       alert(`Failed to save property: ${error.message}`);
     }
