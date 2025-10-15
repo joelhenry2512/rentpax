@@ -26,7 +26,7 @@ export default function AnalysisResults({
 }: AnalysisResultsProps) {
   const cashFlowData = [
     { name: 'Rent Income', amount: data.rent.estimate, color: '#10B981' },
-    { name: 'PITI', amount: -data.finance.PITI, color: '#EF4444' },
+    { name: 'Monthly Payment', amount: -data.finance.PITI, color: '#EF4444' },
     { name: 'Vacancy', amount: -(data.rent.estimate * vacancy / 100), color: '#F59E0B' },
     { name: 'Maintenance', amount: -(data.rent.estimate * maintenance / 100), color: '#8B5CF6' },
     { name: 'Management', amount: -(data.rent.estimate * management / 100), color: '#06B6D4' }
@@ -44,7 +44,7 @@ export default function AnalysisResults({
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <LabelValue label="Home Value" value={`$${data.property.avm.toLocaleString()}`} />
             <LabelValue label="Rent Estimate" value={`$${data.rent.estimate.toLocaleString()}/mo`} />
-            <LabelValue label="PITI" value={`$${data.finance.PITI.toFixed(0)}/mo`} />
+            <LabelValue label="Monthly Payment" value={`$${data.finance.PITI.toFixed(0)}/mo`} />
             <LabelValue label="Break-even Rent" value={`$${data.finance.rentBreakEven.toFixed(0)}/mo`} />
             <LabelValue 
               label="Cash Flow" 
@@ -69,7 +69,7 @@ export default function AnalysisResults({
               className="text-green-600 font-semibold"
             />
             <LabelValue 
-              label="Max PITI by DTI" 
+              label="Max Payment by DTI" 
               value={`$${data.affordability.maxPITIByDTI.toFixed(0)}/mo`}
               className="text-blue-600 font-semibold"
             />
@@ -79,7 +79,7 @@ export default function AnalysisResults({
                 {data.finance.PITI <= data.affordability.maxPITIByDTI ? '✅ Affordable' : '❌ Not Affordable'}
               </div>
               <div className="text-xs text-gray-500 mt-1">
-                PITI: ${data.finance.PITI.toFixed(0)} vs Max: ${data.affordability.maxPITIByDTI.toFixed(0)}
+                Payment: ${data.finance.PITI.toFixed(0)} vs Max: ${data.affordability.maxPITIByDTI.toFixed(0)}
               </div>
             </div>
           </div>
@@ -153,7 +153,7 @@ export default function AnalysisResults({
           />
           <div className="space-y-3">
             <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
-              <span className="text-sm font-medium">PITI</span>
+              <span className="text-sm font-medium">Monthly Payment</span>
               <span className="font-semibold text-red-600">${data.finance.PITI.toFixed(0)}</span>
             </div>
             <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">

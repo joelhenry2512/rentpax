@@ -21,7 +21,7 @@ export default function ExpenseBreakdown({
   const managementAmount = rentEstimate * (management / 100);
   
   const data = [
-    { name: 'PITI', value: piti, color: '#EF4444' },
+    { name: 'Monthly Payment', value: piti, color: '#EF4444' },
     { name: 'Vacancy', value: vacancyAmount, color: '#F59E0B' },
     { name: 'Maintenance', value: maintenanceAmount, color: '#8B5CF6' },
     { name: 'Management', value: managementAmount, color: '#06B6D4' }

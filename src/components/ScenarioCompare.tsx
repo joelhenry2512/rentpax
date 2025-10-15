@@ -19,7 +19,7 @@ export default function ScenarioCompare({ scenarios }: { scenarios: Scenario[] }
             <div className="grid grid-cols-2 gap-2">
               <LabelValue label="Rate" value={`${s.rate.toFixed(2)}%`} />
               <LabelValue label="Down" value={`${(s.down*100).toFixed(0)}%`} />
-              <LabelValue label="PITI" value={`$${s.piti.toFixed(0)}/mo`} />
+              <LabelValue label="Monthly Payment" value={`$${s.piti.toFixed(0)}/mo`} />
               <LabelValue label="Cash Flow" value={`$${s.cashFlow.toFixed(0)}/mo`} />
             </div>
           </div>

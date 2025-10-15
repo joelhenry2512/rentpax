@@ -48,14 +48,14 @@ export function exportToCSV(data: AnalysisData): void {
       'Rent Range High': data.rent.range?.[1] || 'N/A',
       'Comparable Properties': data.rent.comps || 'N/A',
       'Principal & Interest': data.finance.PI,
-      'PITI': data.finance.PITI,
+      'Monthly Payment': data.finance.PITI,
       'Break-even Rent': data.finance.rentBreakEven,
       'Monthly Cash Flow': data.finance.cashFlow,
       'PMI Monthly': data.finance.pmiMonthly,
       'Net Operating Income': data.finance.noi,
       'Cap Rate (%)': (data.finance.capRate * 100).toFixed(2),
       'Cash on Cash Return (%)': (data.finance.coc * 100).toFixed(2),
-      'Max PITI by DTI': data.affordability.maxPITIByDTI,
+      'Max Payment by DTI': data.affordability.maxPITIByDTI,
       'Monthly Income': data.affordability.incomeMonthly,
     }
   ];
@@ -167,7 +167,7 @@ function generatePDFHTML(data: AnalysisData): string {
     <div class="highlight">
       <div class="grid">
         <div class="item">
-          <div class="label">Monthly PITI</div>
+          <div class="label">Monthly Payment</div>
           <div class="value">$${data.finance.PITI.toFixed(0)}</div>
         </div>
         <div class="item">
@@ -194,7 +194,7 @@ function generatePDFHTML(data: AnalysisData): string {
         <div class="value">$${data.affordability.incomeMonthly.toFixed(0)}</div>
       </div>
       <div class="item">
-        <div class="label">Max PITI by DTI</div>
+        <div class="label">Max Payment by DTI</div>
         <div class="value">$${data.affordability.maxPITIByDTI.toFixed(0)}</div>
       </div>
     </div>
