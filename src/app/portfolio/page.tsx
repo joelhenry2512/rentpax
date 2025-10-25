@@ -107,12 +107,14 @@ export default function PortfolioPage() {
 
   return (
     <main className="container mx-auto px-4 py-8">
-      <EditPropertyModal
-        property={editingProperty!}
-        isOpen={!!editingProperty}
-        onClose={() => setEditingProperty(null)}
-        onSave={handleUpdate}
-      />
+      {editingProperty && (
+        <EditPropertyModal
+          property={editingProperty}
+          isOpen={true}
+          onClose={() => setEditingProperty(null)}
+          onSave={handleUpdate}
+        />
+      )}
 
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">My Portfolio</h1>
