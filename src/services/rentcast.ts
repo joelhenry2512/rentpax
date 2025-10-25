@@ -34,6 +34,9 @@ async function fetchRentCastWithComps(address: string): Promise<RentCastResponse
   
   if (!key) {
     // Mocked response with sample comps when key not present
+    // Use random Unsplash photo for demo
+    const demoPhotoUrl = `https://source.unsplash.com/800x600/?house,residential&sig=${Date.now()}`;
+
     return {
       property: {
         avm: 512000,
@@ -42,7 +45,8 @@ async function fetchRentCastWithComps(address: string): Promise<RentCastResponse
         insuranceAnnual: 1500,
         beds: 3,
         baths: 2,
-        sqft: 1750
+        sqft: 1750,
+        photoUrl: demoPhotoUrl
       },
       rent: {
         estimate: 2850,
@@ -132,11 +136,37 @@ async function fetchRentCastWithComps(address: string): Promise<RentCastResponse
     }
 
     const property = propertiesData[0];
-    
+
     // Generate realistic estimates based on property data
     const baseValue = property.squareFootage ? property.squareFootage * 200 : 500000;
     const rentEstimate = property.squareFootage ? property.squareFootage * 1.5 : 2500;
-    
+
+    // Try to get photo from various sources
+    let photoUrl: string | undefined;
+
+    // 1. Check if RentCast provides photos
+    if (property.photoUrl) {
+      photoUrl = property.photoUrl;
+    } else if (property.images && property.images.length > 0) {
+      photoUrl = property.images[0];
+    } else if (property.photos && property.photos.length > 0) {
+      photoUrl = property.photos[0];
+    }
+    // 2. If coordinates available, use Mapbox static image (free tier available)
+    else if (property.latitude && property.longitude) {
+      // Mapbox static images - requires MAPBOX_TOKEN in env
+      const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+      if (mapboxToken) {
+        photoUrl = `https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/static/${property.longitude},${property.latitude},17,0/600x400@2x?access_token=${mapboxToken}`;
+      }
+    }
+    // 3. Use address for generic house image from Unsplash (free, no key needed)
+    else {
+      // Fallback to Unsplash for generic house photos based on property type
+      const houseType = property.propertyType || 'single-family';
+      photoUrl = `https://source.unsplash.com/800x600/?house,${houseType.replace(/\s+/g, '-')}`;
+    }
+
     return {
       property: {
         avm: baseValue,
@@ -145,7 +175,8 @@ async function fetchRentCastWithComps(address: string): Promise<RentCastResponse
         insuranceAnnual: 1500,
         beds: property.bedrooms,
         baths: property.bathrooms,
-        sqft: property.squareFootage
+        sqft: property.squareFootage,
+        photoUrl: photoUrl
       },
       rent: {
         estimate: rentEstimate,
@@ -167,6 +198,8 @@ async function fetchRentCastWithComps(address: string): Promise<RentCastResponse
   } catch (error) {
     console.error("RentCast API error:", error);
     // Fall back to mock data instead of throwing error
+    const fallbackPhotoUrl = `https://source.unsplash.com/800x600/?house,residential&sig=${Date.now()}`;
+
     return {
       property: {
         avm: 512000,
@@ -175,7 +208,8 @@ async function fetchRentCastWithComps(address: string): Promise<RentCastResponse
         insuranceAnnual: 1500,
         beds: 3,
         baths: 2,
-        sqft: 1750
+        sqft: 1750,
+        photoUrl: fallbackPhotoUrl
       },
       rent: {
         estimate: 2850,
