@@ -1,8 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 import { Plus, Edit, Trash2, Eye, TrendingUp, TrendingDown } from "lucide-react";
-import { fetchPortfolio, deleteProperty, type SavedProperty } from "@/services/portfolio";
+import { fetchPortfolio, deleteProperty, updateProperty, type SavedProperty } from "@/services/portfolio";
+import EditPropertyModal from "@/components/EditPropertyModal";
 import Link from "next/link";
 
 export default function PortfolioPage() {
@@ -10,6 +12,7 @@ export default function PortfolioPage() {
   const [properties, setProperties] = useState<SavedProperty[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [editingProperty, setEditingProperty] = useState<SavedProperty | null>(null);
 
   const loadPortfolio = async () => {
     if (!session?.user?.email) return;
@@ -35,17 +38,33 @@ export default function PortfolioPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this property?")) return;
-    
+
     if (!session?.user?.email) {
-      setError("You must be signed in to delete properties");
+      toast.error("You must be signed in to delete properties");
       return;
     }
-    
+
     try {
       await deleteProperty(id, session.user.email);
       setProperties(properties.filter(p => p.id !== id));
+      toast.success("Property deleted successfully");
     } catch (err: any) {
-      setError(err.message);
+      toast.error(err.message);
+    }
+  };
+
+  const handleUpdate = async (id: string, updates: Partial<SavedProperty>) => {
+    if (!session?.user?.email) {
+      toast.error("You must be signed in to update properties");
+      return;
+    }
+
+    try {
+      const updated = await updateProperty(id, { ...updates, email: session.user.email });
+      setProperties(properties.map(p => p.id === id ? updated : p));
+      toast.success("Property updated successfully");
+    } catch (err: any) {
+      toast.error(err.message);
     }
   };
 
@@ -88,6 +107,13 @@ export default function PortfolioPage() {
 
   return (
     <main className="container mx-auto px-4 py-8">
+      <EditPropertyModal
+        property={editingProperty!}
+        isOpen={!!editingProperty}
+        onClose={() => setEditingProperty(null)}
+        onSave={handleUpdate}
+      />
+
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">My Portfolio</h1>
         <p className="text-gray-600">Manage your saved property investments</p>
@@ -166,6 +192,13 @@ export default function PortfolioPage() {
                   </div>
                 </div>
                 <div className="flex gap-2">
+                  <button
+                    onClick={() => setEditingProperty(property)}
+                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                    title="Edit property"
+                  >
+                    <Edit size={16} />
+                  </button>
                   <button
                     onClick={() => handleDelete(property.id)}
                     className="p-2 text-red-600 hover:bg-red-50 rounded-lg"

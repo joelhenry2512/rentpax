@@ -10,6 +10,7 @@ export type AnalysisData = {
     taxAnnual: number;
     hoaMonthly: number;
     insuranceAnnual: number;
+    photoUrl?: string;
   };
   rent: {
     estimate: number;

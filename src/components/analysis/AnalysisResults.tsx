@@ -2,6 +2,8 @@
 import { TrendingUp, TrendingDown, DollarSign, Home, Calculator } from "lucide-react";
 import LabelValue from "@/components/LabelValue";
 import ExportButtons from "@/components/ExportButtons";
+import PropertyPhotos from "@/components/PropertyPhotos";
+import ProjectionsView from "@/components/ProjectionsView";
 import CashFlowChart from "@/components/charts/CashFlowChart";
 import ROIChart from "@/components/charts/ROIChart";
 import ExpenseBreakdown from "@/components/charts/ExpenseBreakdown";
@@ -15,16 +17,20 @@ interface AnalysisResultsProps {
   maintenance: number;
   management: number;
   isAlreadySaved?: boolean;
+  interestRate: number;
+  downPaymentPercent: number;
 }
 
-export default function AnalysisResults({ 
-  data, 
-  onSaveToPortfolio, 
-  onSaveIncome, 
-  vacancy, 
-  maintenance, 
+export default function AnalysisResults({
+  data,
+  onSaveToPortfolio,
+  onSaveIncome,
+  vacancy,
+  maintenance,
   management,
-  isAlreadySaved = false
+  isAlreadySaved = false,
+  interestRate,
+  downPaymentPercent
 }: AnalysisResultsProps) {
   const cashFlowData = [
     { name: 'Rent Income', amount: data.rent.estimate, color: '#10B981' },
@@ -36,6 +42,15 @@ export default function AnalysisResults({
 
   return (
     <>
+      {/* Property Photos and Details */}
+      <PropertyPhotos
+        photoUrl={data.property.photoUrl}
+        address={data.address}
+        beds={data.property.beds}
+        baths={data.property.baths}
+        sqft={data.property.sqft}
+      />
+
       {/* Summary Cards */}
       <section className="grid md:grid-cols-3 gap-4 mb-6">
         <div className="card md:col-span-2">
@@ -185,6 +200,21 @@ export default function AnalysisResults({
           </div>
         </div>
       </section>
+
+      {/* 30-Year Projections */}
+      <ProjectionsView
+        inputs={{
+          homeValue: data.property.avm,
+          downPayment: data.property.avm * downPaymentPercent,
+          loanAmount: data.property.avm * (1 - downPaymentPercent),
+          interestRate: interestRate,
+          loanTermYears: 30,
+          monthlyPI: data.finance.PI,
+          monthlyPITI: data.finance.PITI,
+          rentEstimate: data.rent.estimate,
+          monthlyCashFlow: data.finance.cashFlow
+        }}
+      />
     </>
   );
 }
