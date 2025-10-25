@@ -8,45 +8,45 @@ datasource db {
 }
 
 model User {
-  id        String     @id @default(cuid())
-  email     String     @unique
-  password  String
-  createdAt DateTime   @default(now())
-  profile   Profile?
+  id         String     @id @default(cuid())
+  email      String     @unique
+  password   String
+  createdAt  DateTime   @default(now())
+  profile    Profile?
   properties Property[]
 }
 
 model Profile {
-  id             String  @id @default(cuid())
-  userId         String  @unique
-  user           User    @relation(fields: [userId], references: [id])
-  incomeAnnual   Int     @default(0)
-  otherDebtMonthly Int   @default(0)
+  id               String @id @default(cuid())
+  userId           String @unique
+  incomeAnnual     Int    @default(0)
+  otherDebtMonthly Int    @default(0)
+  user             User   @relation(fields: [userId], references: [id])
 }
 
 model Property {
-  id                String   @id @default(cuid())
-  userId            String
-  user              User     @relation(fields: [userId], references: [id])
-  address           String
-  homeValue         Int
-  beds              Int?
-  baths             Float?
-  sqft              Int?
-  taxAnnual         Int
-  hoaMonthly        Int
-  insuranceAnnual   Int
-  rentEstimate      Int
-  interestRate      Float
+  id                 String   @id @default(cuid())
+  userId             String
+  address            String
+  homeValue          Int
+  beds               Int?
+  baths              Float?
+  sqft               Int?
+  taxAnnual          Int
+  hoaMonthly         Int
+  insuranceAnnual    Int
+  rentEstimate       Int
+  interestRate       Float
   downPaymentPercent Float
-  vacancyRate       Float
-  maintenanceRate   Float
-  managementRate    Float
-  piti              Int
-  cashFlow          Int
-  capRate           Float
-  coc               Float
-  notes             String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  vacancyRate        Float
+  maintenanceRate    Float
+  managementRate     Float
+  piti               Int
+  cashFlow           Int
+  capRate            Float
+  coc                Float
+  notes              String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  user               User     @relation(fields: [userId], references: [id])
 }
