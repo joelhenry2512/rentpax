@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 import SettingsDrawer from "@/components/SettingsDrawer";
 import ScenarioCompare from "@/components/ScenarioCompare";
 import CompsSelector from "@/components/CompsSelector";
@@ -70,13 +71,13 @@ export default function Home() {
 
   async function analyze(customRent?: number) {
     if (!address.trim()) {
-      alert("Please enter an address");
+      toast.error("Please enter an address");
       return;
     }
-    
+
     setLoading(true);
     setData(null);
-    
+
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
@@ -96,21 +97,22 @@ export default function Home() {
           selectedCompIds: selectedComps
         })
       });
-      
+
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
       }
-      
+
       const json = await res.json();
-      
+
       if (json.error) {
         throw new Error(json.error);
       }
-      
+
       setData(json);
+      toast.success("Property analyzed successfully!");
     } catch (error) {
       console.error("Analysis error:", error);
-      alert(`Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(`Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -119,33 +121,39 @@ export default function Home() {
   // save income to authenticated user's profile
   async function saveIncome() {
     if (!session?.user?.email) {
-      alert("Please sign in to save your income");
+      toast.error("Please sign in to save your income");
       return;
     }
-    
-    await fetch("/api/profile", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: session.user.email, incomeAnnual: Number(income), otherDebtMonthly: 0 })
-    });
-    alert("Income saved to your profile!");
+
+    try {
+      await fetch("/api/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: session.user.email, incomeAnnual: Number(income), otherDebtMonthly: 0 })
+      });
+      toast.success("Income saved to your profile!");
+    } catch (error) {
+      toast.error("Failed to save income");
+    }
   }
 
   // save property to portfolio
   async function saveToPortfolio() {
     if (!data) return;
-    
+
     if (!session?.user?.email) {
-      alert("Please sign in to save properties to your portfolio");
+      toast.error("Please sign in to save properties to your portfolio");
       return;
     }
 
     // Check if property is already saved
     if (savedAddresses.includes(data.address)) {
-      const viewPortfolio = confirm("This property is already in your portfolio. Would you like to view your portfolio?");
-      if (viewPortfolio) {
-        window.location.href = "/portfolio";
-      }
+      toast.info("This property is already in your portfolio", {
+        action: {
+          label: "View Portfolio",
+          onClick: () => window.location.href = "/portfolio"
+        }
+      });
       return;
     }
 
@@ -171,24 +179,28 @@ export default function Home() {
         capRate: data.finance.capRate,
         coc: data.finance.coc
       });
-      
+
       // Add to saved addresses list
       setSavedAddresses([...savedAddresses, data.address]);
-      
+
       // Show success message with option to view portfolio
-      const viewPortfolio = confirm("Property saved to portfolio! Would you like to view your portfolio?");
-      if (viewPortfolio) {
-        window.location.href = "/portfolio";
-      }
+      toast.success("Property saved to portfolio!", {
+        action: {
+          label: "View Portfolio",
+          onClick: () => window.location.href = "/portfolio"
+        }
+      });
     } catch (error: any) {
       // Check if it's a duplicate property error
       if (error.message.includes("already in your portfolio")) {
-        const viewPortfolio = confirm("This property is already in your portfolio. Would you like to view your portfolio?");
-        if (viewPortfolio) {
-          window.location.href = "/portfolio";
-        }
+        toast.info("This property is already in your portfolio", {
+          action: {
+            label: "View Portfolio",
+            onClick: () => window.location.href = "/portfolio"
+          }
+        });
       } else {
-        alert(`Failed to save property: ${error.message}`);
+        toast.error(`Failed to save property: ${error.message}`);
       }
     }
   }
@@ -243,6 +255,8 @@ export default function Home() {
             maintenance={maint}
             management={mgmt}
             isAlreadySaved={savedAddresses.includes(data.address)}
+            interestRate={rate / 100}
+            downPaymentPercent={down / 100}
           />
 
           <ScenarioCompare scenarios={[

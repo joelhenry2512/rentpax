@@ -1,6 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { SessionProvider } from "next-auth/react";
+import { Toaster } from "sonner";
 import AuthHeader from "@/components/AuthHeader";
 
 export const metadata: Metadata = {
@@ -13,6 +14,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <SessionProvider>
+          <Toaster position="top-right" richColors />
           <div className="container py-8">
             <header className="flex items-center justify-between mb-6">
               <div className="text-2xl font-bold">RentPax</div>
