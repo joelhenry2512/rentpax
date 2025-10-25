@@ -14,6 +14,7 @@ interface AnalysisResultsProps {
   vacancy: number;
   maintenance: number;
   management: number;
+  isAlreadySaved?: boolean;
 }
 
 export default function AnalysisResults({ 
@@ -22,7 +23,8 @@ export default function AnalysisResults({
   onSaveIncome, 
   vacancy, 
   maintenance, 
-  management 
+  management,
+  isAlreadySaved = false
 }: AnalysisResultsProps) {
   const cashFlowData = [
     { name: 'Rent Income', amount: data.rent.estimate, color: '#10B981' },
@@ -87,8 +89,12 @@ export default function AnalysisResults({
             <button className="btn-secondary w-full" onClick={onSaveIncome}>
               Save my income
             </button>
-            <button className="btn-primary w-full" onClick={onSaveToPortfolio}>
-              Save to Portfolio
+            <button 
+              className={`w-full ${isAlreadySaved ? 'btn-secondary bg-gray-100 text-gray-600 cursor-not-allowed' : 'btn-primary'}`}
+              onClick={onSaveToPortfolio}
+              disabled={isAlreadySaved}
+            >
+              {isAlreadySaved ? '✓ Already Saved' : 'Save to Portfolio'}
             </button>
           </div>
         </div>

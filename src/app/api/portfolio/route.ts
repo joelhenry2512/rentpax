@@ -69,6 +69,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    // Check if property with same address already exists for this user
+    const existingProperty = await prisma.property.findFirst({
+      where: {
+        userId: user.id,
+        address: data.address
+      }
+    });
+
+    if (existingProperty) {
+      return NextResponse.json({ 
+        error: "This property is already in your portfolio",
+        duplicate: true 
+      }, { status: 409 });
+    }
+
     const property = await prisma.property.create({
       data: {
         userId: user.id,

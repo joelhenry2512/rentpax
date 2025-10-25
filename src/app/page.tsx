@@ -6,7 +6,7 @@ import ScenarioCompare from "@/components/ScenarioCompare";
 import CompsSelector from "@/components/CompsSelector";
 import AnalysisResults from "@/components/analysis/AnalysisResults";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
-import { saveProperty } from "@/services/portfolio";
+import { saveProperty, fetchPortfolio } from "@/services/portfolio";
 
 type RentCastComp = {
   id: string;
@@ -51,6 +51,22 @@ export default function Home() {
   const [maint, setMaint] = useState(8);
   const [mgmt, setMgmt] = useState(8);
   const [selectedComps, setSelectedComps] = useState<string[]>([]);
+  const [savedAddresses, setSavedAddresses] = useState<string[]>([]);
+
+  // Load saved addresses when user signs in
+  useEffect(() => {
+    async function loadSavedAddresses() {
+      if (session?.user?.email) {
+        try {
+          const portfolio = await fetchPortfolio(session.user.email);
+          setSavedAddresses(portfolio.map(p => p.address));
+        } catch (error) {
+          console.error("Failed to load saved addresses:", error);
+        }
+      }
+    }
+    loadSavedAddresses();
+  }, [session]);
 
   async function analyze(customRent?: number) {
     if (!address.trim()) {
@@ -124,6 +140,15 @@ export default function Home() {
       return;
     }
 
+    // Check if property is already saved
+    if (savedAddresses.includes(data.address)) {
+      const viewPortfolio = confirm("This property is already in your portfolio. Would you like to view your portfolio?");
+      if (viewPortfolio) {
+        window.location.href = "/portfolio";
+      }
+      return;
+    }
+
     try {
       await saveProperty({
         email: session.user.email,
@@ -147,13 +172,24 @@ export default function Home() {
         coc: data.finance.coc
       });
       
+      // Add to saved addresses list
+      setSavedAddresses([...savedAddresses, data.address]);
+      
       // Show success message with option to view portfolio
       const viewPortfolio = confirm("Property saved to portfolio! Would you like to view your portfolio?");
       if (viewPortfolio) {
         window.location.href = "/portfolio";
       }
     } catch (error: any) {
-      alert(`Failed to save property: ${error.message}`);
+      // Check if it's a duplicate property error
+      if (error.message.includes("already in your portfolio")) {
+        const viewPortfolio = confirm("This property is already in your portfolio. Would you like to view your portfolio?");
+        if (viewPortfolio) {
+          window.location.href = "/portfolio";
+        }
+      } else {
+        alert(`Failed to save property: ${error.message}`);
+      }
     }
   }
 
@@ -206,6 +242,7 @@ export default function Home() {
             vacancy={vacancy}
             maintenance={maint}
             management={mgmt}
+            isAlreadySaved={savedAddresses.includes(data.address)}
           />
 
           <ScenarioCompare scenarios={[
