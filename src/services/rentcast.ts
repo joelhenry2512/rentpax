@@ -34,10 +34,10 @@ async function fetchRentCastWithComps(address: string): Promise<RentCastResponse
   
   if (!key) {
     // Mocked response with sample comps when key not present
-    // Use consistent Unsplash photo based on address
+    // Use Unsplash Source API with consistent seed based on address
     const addressHash = address.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const photoIndex = addressHash % 10; // Cycle through 10 different house photos
-    const demoPhotoUrl = `https://images.unsplash.com/photo-${1568605114967 + photoIndex * 100000000}-${Math.abs(addressHash).toString(36)}?w=800&h=600&fit=crop&auto=format&q=80`;
+    const seed = Math.abs(addressHash) % 1000; // Create seed from address for consistency
+    const demoPhotoUrl = `https://source.unsplash.com/800x600/?house,home,residential,architecture&seed=${seed}`;
 
     return {
       property: {
@@ -199,7 +199,8 @@ async function fetchRentCastWithComps(address: string): Promise<RentCastResponse
       const houseType = property.propertyType || 'single-family';
       // Use address hash to get consistent photo for same property
       const addressHash = address.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-      photoUrl = `https://source.unsplash.com/800x600/?house,${houseType.replace(/\s+/g, '-')}&sig=${addressHash}`;
+      const seed = Math.abs(addressHash) % 1000;
+      photoUrl = `https://source.unsplash.com/800x600/?house,${houseType.replace(/\s+/g, '-')},real-estate&seed=${seed}`;
     }
 
     return {
@@ -234,8 +235,8 @@ async function fetchRentCastWithComps(address: string): Promise<RentCastResponse
     console.error("RentCast API error:", error);
     // Fall back to mock data instead of throwing error
     const addressHash = address.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const photoIndex = addressHash % 10;
-    const fallbackPhotoUrl = `https://images.unsplash.com/photo-${1568605114967 + photoIndex * 100000000}-${Math.abs(addressHash).toString(36)}?w=800&h=600&fit=crop&auto=format&q=80`;
+    const seed = Math.abs(addressHash) % 1000;
+    const fallbackPhotoUrl = `https://source.unsplash.com/800x600/?house,home,residential,architecture&seed=${seed}`;
 
     return {
       property: {
