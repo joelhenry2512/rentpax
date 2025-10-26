@@ -34,8 +34,10 @@ async function fetchRentCastWithComps(address: string): Promise<RentCastResponse
   
   if (!key) {
     // Mocked response with sample comps when key not present
-    // Use random Unsplash photo for demo
-    const demoPhotoUrl = `https://source.unsplash.com/800x600/?house,residential&sig=${Date.now()}`;
+    // Use consistent Unsplash photo based on address
+    const addressHash = address.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const photoIndex = addressHash % 10; // Cycle through 10 different house photos
+    const demoPhotoUrl = `https://images.unsplash.com/photo-${1568605114967 + photoIndex * 100000000}-${Math.abs(addressHash).toString(36)}?w=800&h=600&fit=crop&auto=format&q=80`;
 
     return {
       property: {
@@ -114,57 +116,90 @@ async function fetchRentCastWithComps(address: string): Promise<RentCastResponse
   }
 
   // Real API calls when key is present
-  const headers = { 
-    "Accept": "application/json", 
-    "X-Api-Key": key 
+  const headers = {
+    "Accept": "application/json",
+    "X-Api-Key": key
   };
-  
+
   try {
-    // Use the working properties endpoint
-    const propertiesUrl = `https://api.rentcast.io/v1/properties?address=${encodeURIComponent(address)}`;
-    const propertiesRes = await fetch(propertiesUrl, { headers });
+    // Fetch property data and photos from RentCast
+    // Try the property-records endpoint which includes photos
+    const propertyUrl = `https://api.rentcast.io/v1/property-records?address=${encodeURIComponent(address)}`;
 
-    if (!propertiesRes.ok) {
-      throw new Error("Upstream provider error");
+    let property: any = null;
+    let photoUrl: string | undefined;
+
+    try {
+      const propertyRes = await fetch(propertyUrl, { headers });
+      if (propertyRes.ok) {
+        const propertyData = await propertyRes.json();
+        property = propertyData;
+
+        // Extract photo from property-records response
+        if (propertyData.propertyRecords?.[0]?.photos?.length > 0) {
+          photoUrl = propertyData.propertyRecords[0].photos[0];
+        } else if (propertyData.photos?.length > 0) {
+          photoUrl = propertyData.photos[0];
+        } else if (propertyData.photoUrl) {
+          photoUrl = propertyData.photoUrl;
+        } else if (propertyData.imageUrl) {
+          photoUrl = propertyData.imageUrl;
+        }
+      }
+    } catch (photoError) {
+      console.log("Photo fetch failed, will use fallback:", photoError);
     }
 
-    const propertiesData = await propertiesRes.json();
-    
-    // If no properties found, use mock data
-    if (!propertiesData || propertiesData.length === 0) {
-      throw new Error("No property data found");
-    }
+    // If no property data from property-records, try properties endpoint
+    let propertiesData: any[] = [];
+    if (!property) {
+      const propertiesUrl = `https://api.rentcast.io/v1/properties?address=${encodeURIComponent(address)}`;
+      const propertiesRes = await fetch(propertiesUrl, { headers });
 
-    const property = propertiesData[0];
+      if (!propertiesRes.ok) {
+        throw new Error("Upstream provider error");
+      }
+
+      propertiesData = await propertiesRes.json();
+
+      if (!propertiesData || propertiesData.length === 0) {
+        throw new Error("No property data found");
+      }
+
+      property = propertiesData[0];
+    }
 
     // Generate realistic estimates based on property data
     const baseValue = property.squareFootage ? property.squareFootage * 200 : 500000;
     const rentEstimate = property.squareFootage ? property.squareFootage * 1.5 : 2500;
 
-    // Try to get photo from various sources
-    let photoUrl: string | undefined;
-
-    // 1. Check if RentCast provides photos
-    if (property.photoUrl) {
-      photoUrl = property.photoUrl;
-    } else if (property.images && property.images.length > 0) {
-      photoUrl = property.images[0];
-    } else if (property.photos && property.photos.length > 0) {
-      photoUrl = property.photos[0];
-    }
-    // 2. If coordinates available, use Mapbox static image (free tier available)
-    else if (property.latitude && property.longitude) {
-      // Mapbox static images - requires MAPBOX_TOKEN in env
-      const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-      if (mapboxToken) {
-        photoUrl = `https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/static/${property.longitude},${property.latitude},17,0/600x400@2x?access_token=${mapboxToken}`;
+    // If still no photo, try other sources
+    if (!photoUrl) {
+      // 1. Check various photo fields in property data
+      if (property.photoUrl) {
+        photoUrl = property.photoUrl;
+      } else if (property.images && property.images.length > 0) {
+        photoUrl = property.images[0];
+      } else if (property.photos && property.photos.length > 0) {
+        photoUrl = property.photos[0];
+      } else if (property.imageUrl) {
+        photoUrl = property.imageUrl;
+      }
+      // 2. If coordinates available, use Mapbox static image (free tier available)
+      else if (property.latitude && property.longitude) {
+        const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+        if (mapboxToken) {
+          photoUrl = `https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/static/${property.longitude},${property.latitude},17,0/600x400@2x?access_token=${mapboxToken}`;
+        }
       }
     }
-    // 3. Use address for generic house image from Unsplash (free, no key needed)
-    else {
-      // Fallback to Unsplash for generic house photos based on property type
+
+    // 3. Final fallback: Unsplash generic house image
+    if (!photoUrl) {
       const houseType = property.propertyType || 'single-family';
-      photoUrl = `https://source.unsplash.com/800x600/?house,${houseType.replace(/\s+/g, '-')}`;
+      // Use address hash to get consistent photo for same property
+      const addressHash = address.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      photoUrl = `https://source.unsplash.com/800x600/?house,${houseType.replace(/\s+/g, '-')}&sig=${addressHash}`;
     }
 
     return {
@@ -198,7 +233,9 @@ async function fetchRentCastWithComps(address: string): Promise<RentCastResponse
   } catch (error) {
     console.error("RentCast API error:", error);
     // Fall back to mock data instead of throwing error
-    const fallbackPhotoUrl = `https://source.unsplash.com/800x600/?house,residential&sig=${Date.now()}`;
+    const addressHash = address.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const photoIndex = addressHash % 10;
+    const fallbackPhotoUrl = `https://images.unsplash.com/photo-${1568605114967 + photoIndex * 100000000}-${Math.abs(addressHash).toString(36)}?w=800&h=600&fit=crop&auto=format&q=80`;
 
     return {
       property: {
