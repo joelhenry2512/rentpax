@@ -33,11 +33,23 @@ async function fetchRentCastWithComps(address: string): Promise<RentCastResponse
   const key = process.env.RENTCAST_API_KEY;
   
   if (!key) {
-    // Mocked response with sample comps when key not present
-    // Use Unsplash Source API with consistent seed based on address
-    const addressHash = address.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const seed = Math.abs(addressHash) % 1000; // Create seed from address for consistency
-    const demoPhotoUrl = `https://source.unsplash.com/800x600/?house,home,residential,architecture&seed=${seed}`;
+    // Mocked response when RentCast API key not present
+    // Try Google Street View for REAL property photo
+    const googleKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    let demoPhotoUrl: string;
+
+    if (googleKey) {
+      // Use Google Street View for REAL property photos
+      const encodedAddress = encodeURIComponent(address);
+      demoPhotoUrl = `https://maps.googleapis.com/maps/api/streetview?size=800x600&location=${encodedAddress}&key=${googleKey}`;
+      console.log('Demo mode: Using Google Street View for real property photo');
+    } else {
+      // Fallback to Unsplash if no Google key
+      const addressHash = address.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      const seed = Math.abs(addressHash) % 1000;
+      demoPhotoUrl = `https://source.unsplash.com/800x600/?house,home,residential,architecture&seed=${seed}`;
+      console.log('Demo mode: Using Unsplash - add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY for real photos');
+    }
 
     return {
       property: {
@@ -194,13 +206,22 @@ async function fetchRentCastWithComps(address: string): Promise<RentCastResponse
       }
     }
 
-    // 3. Final fallback: Unsplash generic house image
+    // 3. Final fallback: Try Google Street View for REAL property photo, then Unsplash
     if (!photoUrl) {
-      const houseType = property.propertyType || 'single-family';
-      // Use address hash to get consistent photo for same property
-      const addressHash = address.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-      const seed = Math.abs(addressHash) % 1000;
-      photoUrl = `https://source.unsplash.com/800x600/?house,${houseType.replace(/\s+/g, '-')},real-estate&seed=${seed}`;
+      // Try Google Street View first (shows REAL property)
+      const googleKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+      if (googleKey) {
+        const encodedAddress = encodeURIComponent(address);
+        photoUrl = `https://maps.googleapis.com/maps/api/streetview?size=800x600&location=${encodedAddress}&key=${googleKey}`;
+        console.log('Using Google Street View for real property photo');
+      } else {
+        // Fallback to Unsplash generic house photos if no Google API key
+        const houseType = property.propertyType || 'single-family';
+        const addressHash = address.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        const seed = Math.abs(addressHash) % 1000;
+        photoUrl = `https://source.unsplash.com/800x600/?house,${houseType.replace(/\s+/g, '-')},real-estate&seed=${seed}`;
+        console.log('Using Unsplash fallback - add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY for real photos');
+      }
     }
 
     return {
@@ -233,10 +254,20 @@ async function fetchRentCastWithComps(address: string): Promise<RentCastResponse
     };
   } catch (error) {
     console.error("RentCast API error:", error);
-    // Fall back to mock data instead of throwing error
-    const addressHash = address.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const seed = Math.abs(addressHash) % 1000;
-    const fallbackPhotoUrl = `https://source.unsplash.com/800x600/?house,home,residential,architecture&seed=${seed}`;
+    // Fall back to mock data with Google Street View if possible
+    const googleKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    let fallbackPhotoUrl: string;
+
+    if (googleKey) {
+      const encodedAddress = encodeURIComponent(address);
+      fallbackPhotoUrl = `https://maps.googleapis.com/maps/api/streetview?size=800x600&location=${encodedAddress}&key=${googleKey}`;
+      console.log('Error fallback: Using Google Street View for real property photo');
+    } else {
+      const addressHash = address.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      const seed = Math.abs(addressHash) % 1000;
+      fallbackPhotoUrl = `https://source.unsplash.com/800x600/?house,home,residential,architecture&seed=${seed}`;
+      console.log('Error fallback: Using Unsplash - add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY for real photos');
+    }
 
     return {
       property: {
