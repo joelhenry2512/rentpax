@@ -113,7 +113,7 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("Save property error:", error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Invalid data", details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: "Invalid data", details: error.issues }, { status: 400 });
     }
     return NextResponse.json({ error: "Failed to save property" }, { status: 500 });
   }
