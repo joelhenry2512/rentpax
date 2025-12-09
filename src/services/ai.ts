@@ -1,12 +1,12 @@
 /**
- * AI Service Layer using Anthropic Claude API
+ * AI Service Layer using OpenAI GPT-4 API
  * Provides investment analysis and chat assistance
  */
 
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 export interface PropertyAnalysisData {
@@ -54,28 +54,32 @@ export async function generateInvestmentRecommendation(
   const prompt = buildInvestmentAdvisorPrompt(data);
 
   try {
-    const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 2000,
-      temperature: 0.3, // Lower temperature for more consistent analysis
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o', // GPT-4 Optimized (faster and cheaper than gpt-4-turbo)
       messages: [
+        {
+          role: 'system',
+          content: 'You are an expert real estate investment advisor with 20+ years of experience analyzing rental properties. Provide detailed, actionable analysis.',
+        },
         {
           role: 'user',
           content: prompt,
         },
       ],
+      temperature: 0.3, // Lower temperature for more consistent analysis
+      max_tokens: 2000,
+      response_format: { type: 'json_object' }, // Force JSON response
     });
 
-    // Parse the response
-    const content = message.content[0];
-    if (content.type !== 'text') {
-      throw new Error('Unexpected response type from AI');
+    const content = completion.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error('No response from OpenAI');
     }
 
-    const recommendation = parseInvestmentRecommendation(content.text, data);
+    const recommendation = parseInvestmentRecommendation(content, data);
     return recommendation;
   } catch (error) {
-    console.error('AI Investment Advisor error:', error);
+    console.error('OpenAI Investment Advisor error:', error);
     throw new Error('Failed to generate investment recommendation');
   }
 }
@@ -96,30 +100,36 @@ export async function chatWithAssistant(
   const systemPrompt = buildChatAssistantSystemPrompt(propertyData);
 
   try {
-    const messages = [
-      ...(conversationHistory || []),
+    const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
       {
-        role: 'user' as const,
+        role: 'system',
+        content: systemPrompt,
+      },
+      ...(conversationHistory || []).map((msg) => ({
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content,
+      })),
+      {
+        role: 'user',
         content: question,
       },
     ];
 
-    const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 1500,
-      temperature: 0.5, // Slightly higher for conversational tone
-      system: systemPrompt,
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o', // GPT-4 Optimized
       messages,
+      temperature: 0.7, // Slightly higher for conversational tone
+      max_tokens: 1000,
     });
 
-    const content = message.content[0];
-    if (content.type !== 'text') {
-      throw new Error('Unexpected response type from AI');
+    const content = completion.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error('No response from OpenAI');
     }
 
-    return content.text;
+    return content;
   } catch (error) {
-    console.error('AI Chat Assistant error:', error);
+    console.error('OpenAI Chat Assistant error:', error);
     throw new Error('Failed to get AI response');
   }
 }
@@ -158,14 +168,14 @@ Provide your analysis in the following JSON format:
   "reasoning": "<detailed paragraph explaining your recommendation>"
 }
 
-GUIDELINES:
+SCORING GUIDELINES:
 - Score 8-10: Strong Buy (excellent cash flow, cap rate >7%, CoC >10%)
 - Score 6-7: Buy (good fundamentals, positive cash flow, cap rate 5-7%)
 - Score 4-5: Hold (marginal returns, consider only if strategic)
 - Score 2-3: Pass (poor returns, negative cash flow)
 - Score 1: Avoid (major red flags)
 
-Consider:
+IMPORTANT CONSIDERATIONS:
 - Cash flow: Positive is essential for rental properties
 - Cap rate: 6%+ is good, 8%+ is excellent
 - Cash-on-Cash return: 8%+ is target for most investors
@@ -173,7 +183,7 @@ Consider:
 - Market conditions and appreciation potential
 - Risk factors (vacancy, maintenance, market volatility)
 
-Be specific, actionable, and honest. If it's a bad deal, say so clearly.`;
+Be specific, actionable, and honest. If it's a bad deal, say so clearly. Return ONLY valid JSON.`;
 }
 
 /**
@@ -220,14 +230,8 @@ function parseInvestmentRecommendation(
   data: PropertyAnalysisData
 ): InvestmentRecommendation {
   try {
-    // Extract JSON from response (handle markdown code blocks)
-    let jsonStr = aiResponse;
-    const jsonMatch = aiResponse.match(/```json\n([\s\S]*?)\n```/) || aiResponse.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      jsonStr = jsonMatch[1] || jsonMatch[0];
-    }
-
-    const parsed = JSON.parse(jsonStr);
+    // Parse JSON response
+    const parsed = JSON.parse(aiResponse);
 
     // Calculate predicted returns based on current metrics
     const year5Return = Math.round(

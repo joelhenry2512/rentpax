@@ -30,9 +30,9 @@ const InvestmentAdvisorRequestSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     // Check for API key
-    if (!process.env.ANTHROPIC_API_KEY) {
+    if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
-        { error: 'AI service not configured. Please add ANTHROPIC_API_KEY to environment variables.' },
+        { error: 'AI service not configured. Please add OPENAI_API_KEY to environment variables.' },
         { status: 503 }
       );
     }
