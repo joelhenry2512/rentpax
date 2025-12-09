@@ -1,7 +1,7 @@
 # AI Features Setup Guide
 ## RentPax - AI-Powered Investment Analysis
 
-This guide will help you set up and use the AI features in RentPax, powered by Anthropic's Claude AI.
+This guide will help you set up and use the AI features in RentPax, powered by OpenAI's GPT-4.
 
 ---
 
@@ -28,23 +28,24 @@ RentPax includes two powerful AI features:
 ## 📋 Prerequisites
 
 1. **RentPax Application** - Running locally or deployed to Vercel
-2. **Anthropic API Key** - Free tier available at [console.anthropic.com](https://console.anthropic.com)
+2. **OpenAI API Key** - Sign up at [platform.openai.com](https://platform.openai.com)
 
 ---
 
 ## 🚀 Quick Setup (5 minutes)
 
-### Step 1: Get Your Anthropic API Key
+### Step 1: Get Your OpenAI API Key
 
-1. Go to [https://console.anthropic.com](https://console.anthropic.com)
-2. Sign up or log in (free account available)
-3. Navigate to **API Keys** in the dashboard
-4. Click **Create Key**
-5. Copy your API key (starts with `sk-ant-api...`)
+1. Go to [https://platform.openai.com](https://platform.openai.com)
+2. Sign up or log in
+3. Navigate to **API Keys** (top right menu)
+4. Click **+ Create new secret key**
+5. Give it a name (e.g., "RentPax")
+6. Copy your API key (starts with `sk-proj-...` or `sk-...`)
 
-**Free Tier**: $5 in free credits when you sign up
-- Approximately 150-200 property analyses
-- Perfect for testing and personal use
+**New Users**: $5 in free credits when you sign up (valid for 3 months)
+- Approximately 100-150 property analyses with GPT-4o
+- Perfect for testing and academic projects
 
 ### Step 2: Add API Key to Environment Variables
 
@@ -54,7 +55,7 @@ Create or update your `.env.local` file:
 
 ```bash
 # .env.local
-ANTHROPIC_API_KEY=sk-ant-api-your-key-here
+OPENAI_API_KEY=sk-proj-your-key-here
 ```
 
 #### For Vercel Deployment:
@@ -62,8 +63,8 @@ ANTHROPIC_API_KEY=sk-ant-api-your-key-here
 1. Go to your Vercel project dashboard
 2. Navigate to **Settings** → **Environment Variables**
 3. Add new variable:
-   - **Name**: `ANTHROPIC_API_KEY`
-   - **Value**: `sk-ant-api-your-key-here`
+   - **Name**: `OPENAI_API_KEY`
+   - **Value**: `sk-proj-your-key-here`
    - **Environments**: Production, Preview, Development
 4. Click **Save**
 5. **Important**: Redeploy your application for changes to take effect
@@ -103,17 +104,18 @@ For the **AI Chat Assistant**:
 
 ## 💰 Pricing
 
-### Anthropic Claude Pricing (as of 2024):
+### OpenAI GPT-4 Pricing (as of December 2024):
 
 | Model | Input (per 1M tokens) | Output (per 1M tokens) | Cost per Analysis |
 |-------|----------------------|----------------------|-------------------|
-| Claude 3.5 Sonnet | $3.00 | $15.00 | ~$0.02-0.04 |
+| GPT-4o | $2.50 | $10.00 | ~$0.03-0.05 |
+| GPT-4o-mini | $0.15 | $0.60 | ~$0.002-0.005 |
 
-**Real-world costs**:
-- **Investment Advisor**: ~$0.02-0.03 per property analysis
+**Real-world costs** (using GPT-4o):
+- **Investment Advisor**: ~$0.03-0.05 per property analysis
 - **Chat Assistant**: ~$0.01-0.02 per message exchange
-- **100 property analyses**: ~$3-4 total
-- **Free tier credit**: $5 = ~150-200 analyses
+- **100 property analyses**: ~$4-6 total
+- **Free tier credit**: $5 = ~100-150 analyses
 
 **Cost optimization tips**:
 - The first analysis is the most expensive
@@ -184,10 +186,10 @@ For the **AI Chat Assistant**:
 **Problem**: API key not set or incorrect
 
 **Solution**:
-1. Verify your `ANTHROPIC_API_KEY` is set in environment variables
+1. Verify your `OPENAI_API_KEY` is set in environment variables
 2. Check there are no extra spaces or quotes in the key
 3. Restart your development server or redeploy to Vercel
-4. Check the key is valid at [console.anthropic.com](https://console.anthropic.com)
+4. Check the key is valid at [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
 
 ### AI responses are slow or timeout
 
@@ -195,7 +197,7 @@ For the **AI Chat Assistant**:
 
 **Solutions**:
 - Check your internet connection
-- Verify you haven't exceeded API rate limits
+- Verify you haven't exceeded API rate limits (3,500 requests/min for GPT-4o)
 - Try again in a few seconds
 - For production: Implement retry logic (already included)
 
@@ -205,8 +207,9 @@ For the **AI Chat Assistant**:
 
 **Solutions**:
 - Wait 60 seconds and try again
-- Upgrade to Anthropic's paid tier for higher limits
+- OpenAI automatically increases limits as you use the API more
 - Implement caching for repeated property analyses
+- Check your usage at [platform.openai.com/usage](https://platform.openai.com/usage)
 
 ### AI recommendations seem incorrect
 
@@ -288,9 +291,9 @@ For the **AI Chat Assistant**:
 - **API Communication**: All requests encrypted via HTTPS
 - **Data Storage**: Conversation history stored locally in browser (not saved to database)
 - **API Keys**: Never exposed to client-side code
-- **Third-party**: Anthropic processes requests but doesn't train on your data (per their policy)
+- **Third-party**: OpenAI processes requests. API data is not used for training by default (per their policy)
 
-### What's sent to Anthropic:
+### What's sent to OpenAI:
 
 **Investment Advisor**:
 - Property address
@@ -312,7 +315,7 @@ For the **AI Chat Assistant**:
 1. Don't include sensitive personal information in chat
 2. Don't share your API key publicly
 3. Rotate your API key if compromised
-4. Review Anthropic's privacy policy for details
+4. Review OpenAI's privacy policy at [openai.com/policies](https://openai.com/policies)
 
 ---
 
@@ -330,7 +333,9 @@ temperature: 0.3  // Lower = more consistent, Higher = more creative
 max_tokens: 2000  // Higher = longer responses (more expensive)
 
 // Change model for different capabilities
-model: 'claude-3-5-sonnet-20241022'  // Latest model
+model: 'gpt-4o'  // GPT-4 Optimized (recommended)
+// model: 'gpt-4o-mini'  // Cheaper, faster alternative
+// model: 'gpt-4-turbo'  // More capable but slower
 ```
 
 ### Adding More AI Features
@@ -393,10 +398,11 @@ See the [TECHNICAL_IMPLEMENTATION_DOCUMENTATION.md](./TECHNICAL_IMPLEMENTATION_D
 
 ## 🎓 Learning Resources
 
-### Understanding Claude AI:
-- [Anthropic Documentation](https://docs.anthropic.com)
-- [Prompt Engineering Guide](https://docs.anthropic.com/claude/docs/prompt-engineering)
-- [Claude API Reference](https://docs.anthropic.com/claude/reference)
+### Understanding OpenAI GPT-4:
+- [OpenAI Documentation](https://platform.openai.com/docs)
+- [GPT-4 Guide](https://platform.openai.com/docs/guides/gpt)
+- [OpenAI API Reference](https://platform.openai.com/docs/api-reference)
+- [Prompt Engineering Guide](https://platform.openai.com/docs/guides/prompt-engineering)
 
 ### Real Estate Investment AI:
 - Use AI to learn about cap rates, cash flow, ROI
@@ -423,14 +429,13 @@ See the [TECHNICAL_IMPLEMENTATION_DOCUMENTATION.md](./TECHNICAL_IMPLEMENTATION_D
 
 ```bash
 # Check if API key is set (local)
-echo $ANTHROPIC_API_KEY
+echo $OPENAI_API_KEY
 
 # Test API key directly
-curl https://api.anthropic.com/v1/messages \
-  -H "x-api-key: $ANTHROPIC_API_KEY" \
-  -H "anthropic-version: 2023-06-01" \
-  -H "content-type: application/json" \
-  -d '{"model":"claude-3-5-sonnet-20241022","max_tokens":10,"messages":[{"role":"user","content":"Hello"}]}'
+curl https://api.openai.com/v1/chat/completions \
+  -H "Authorization: Bearer $OPENAI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"gpt-4o","messages":[{"role":"user","content":"Hello"}],"max_tokens":10}'
 
 # View server logs (local)
 npm run dev
@@ -460,6 +465,6 @@ You now have AI-powered investment analysis in RentPax!
 
 ---
 
-**Version**: 1.0
+**Version**: 2.0
 **Last Updated**: December 5, 2024
-**Powered by**: Anthropic Claude 3.5 Sonnet
+**Powered by**: OpenAI GPT-4o
