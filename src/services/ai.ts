@@ -67,8 +67,8 @@ export async function generateInvestmentRecommendation(
     // Initialize client with current API key
     const genAI = getGeminiClient();
     
-    // Use stable Gemini 1.5 Flash model (more reliable than experimental models)
-    const models = ['gemini-1.5-flash', 'gemini-1.5-pro'];
+    // Use correct Gemini model names - try gemini-pro first, then gemini-1.5-pro
+    const models = ['gemini-pro', 'gemini-1.5-pro'];
     console.log(`API Key present: ${!!process.env.GEMINI_API_KEY}`);
     console.log(`API Key starts with: ${process.env.GEMINI_API_KEY?.substring(0, 7) || 'N/A'}`);
     
@@ -218,7 +218,7 @@ export async function chatWithAssistant(
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
         const model = genAI.getGenerativeModel({ 
-          model: 'gemini-1.5-flash',
+          model: 'gemini-pro',
           systemInstruction: systemPrompt,
           generationConfig: {
             temperature: 0.7, // Slightly higher for conversational tone

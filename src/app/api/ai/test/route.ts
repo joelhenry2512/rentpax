@@ -31,21 +31,43 @@ export async function GET(request: NextRequest) {
     // Test the API key with a simple request
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ 
-        model: 'gemini-1.5-flash',
+      
+      // Try gemini-pro first, fallback to gemini-1.5-pro if needed
+      let modelName = 'gemini-pro';
+      let model = genAI.getGenerativeModel({ 
+        model: modelName,
         generationConfig: {
           maxOutputTokens: 10,
         },
       });
       
-      const result = await model.generateContent('Say "API test successful"');
+      let result;
+      try {
+        result = await model.generateContent('Say "API test successful"');
+      } catch (error: any) {
+        // If gemini-pro fails, try gemini-1.5-pro
+        if (error?.message?.includes('not found') || error?.status === 404) {
+          console.log('gemini-pro not found, trying gemini-1.5-pro...');
+          modelName = 'gemini-1.5-pro';
+          model = genAI.getGenerativeModel({ 
+            model: modelName,
+            generationConfig: {
+              maxOutputTokens: 10,
+            },
+          });
+          result = await model.generateContent('Say "API test successful"');
+        } else {
+          throw error;
+        }
+      }
+      
       const response = result.response.text();
 
       return NextResponse.json({
         ...diagnostics,
         status: 'success',
         geminiResponse: response || 'No response',
-        model: 'gemini-1.5-flash',
+        model: modelName,
         message: 'Gemini API is working correctly!',
       });
     } catch (geminiError: any) {
