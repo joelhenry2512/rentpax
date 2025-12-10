@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     // Parse and validate request body
     const body = await request.json();
     console.log('Received request body:', JSON.stringify(body, null, 2));
-    
+
     // Sanitize numeric values to ensure they're finite numbers
     const sanitizedBody = {
       ...body,
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       capRate: typeof body.capRate === 'number' && isFinite(body.capRate) ? body.capRate : 0,
       cashOnCashReturn: typeof body.cashOnCashReturn === 'number' && isFinite(body.cashOnCashReturn) ? body.cashOnCashReturn : 0,
     };
-    
+
     // Validate the data
     const validated = InvestmentAdvisorRequestSchema.parse(sanitizedBody);
     console.log('Validated data:', JSON.stringify(validated, null, 2));
@@ -80,11 +80,12 @@ export async function POST(request: NextRequest) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const errorStack = error instanceof Error ? error.stack : undefined;
     console.error('Error stack:', errorStack);
-    
+
     return NextResponse.json(
       {
         error: 'Failed to generate investment recommendation',
-        details: errorMessage
+        details: errorMessage,
+        stack: process.env.NODE_ENV === 'development' ? errorStack : undefined
       },
       { status: 500 }
     );

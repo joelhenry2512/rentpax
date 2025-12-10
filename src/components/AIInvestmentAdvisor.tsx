@@ -56,8 +56,8 @@ export default function AIInvestmentAdvisor({ propertyData }: AIInvestmentAdviso
       });
 
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to get AI recommendation');
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.details || `Request failed with status ${res.status}`);
       }
 
       const data = await res.json();
