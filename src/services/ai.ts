@@ -80,6 +80,23 @@ export async function generateInvestmentRecommendation(
     return recommendation;
   } catch (error) {
     console.error('OpenAI Investment Advisor error:', error);
+
+    // Provide more detailed error messages
+    if (error instanceof Error) {
+      // Check for specific OpenAI errors
+      if (error.message.includes('API key')) {
+        throw new Error('Invalid or missing OpenAI API key. Please check your environment variables.');
+      }
+      if (error.message.includes('quota') || error.message.includes('insufficient_quota')) {
+        throw new Error('OpenAI quota exceeded. Please check your billing at platform.openai.com');
+      }
+      if (error.message.includes('rate_limit')) {
+        throw new Error('OpenAI rate limit exceeded. Please wait a moment and try again.');
+      }
+      // Return the actual error message for debugging
+      throw new Error(`AI Error: ${error.message}`);
+    }
+
     throw new Error('Failed to generate investment recommendation');
   }
 }
@@ -130,6 +147,21 @@ export async function chatWithAssistant(
     return content;
   } catch (error) {
     console.error('OpenAI Chat Assistant error:', error);
+
+    // Provide more detailed error messages
+    if (error instanceof Error) {
+      if (error.message.includes('API key')) {
+        throw new Error('Invalid or missing OpenAI API key. Please check your environment variables.');
+      }
+      if (error.message.includes('quota') || error.message.includes('insufficient_quota')) {
+        throw new Error('OpenAI quota exceeded. Please check your billing at platform.openai.com');
+      }
+      if (error.message.includes('rate_limit')) {
+        throw new Error('OpenAI rate limit exceeded. Please wait a moment and try again.');
+      }
+      throw new Error(`AI Error: ${error.message}`);
+    }
+
     throw new Error('Failed to get AI response');
   }
 }
