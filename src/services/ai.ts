@@ -5,9 +5,16 @@
 
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Initialize OpenAI client lazily to ensure API key is available
+function getOpenAIClient() {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error('OPENAI_API_KEY is not configured');
+  }
+  return new OpenAI({
+    apiKey: apiKey,
+  });
+}
 
 export interface PropertyAnalysisData {
   address: string;
@@ -59,36 +66,92 @@ export async function generateInvestmentRecommendation(
   }
 
   try {
+    // Initialize client with current API key
+    const openai = getOpenAIClient();
+    
     // Try gpt-4o first, fallback to gpt-4-turbo if needed
     const model = 'gpt-4o';
     console.log(`Calling OpenAI API with model: ${model}`);
+    console.log(`API Key present: ${!!process.env.OPENAI_API_KEY}`);
+    console.log(`API Key starts with: ${process.env.OPENAI_API_KEY?.substring(0, 7) || 'N/A'}`);
     
-    const completion = await openai.chat.completions.create({
-      model: model, // GPT-4 Optimized (faster and cheaper than gpt-4-turbo)
-      messages: [
-        {
-          role: 'system',
-          content: 'You are an expert real estate investment advisor with 20+ years of experience analyzing rental properties. Provide detailed, actionable analysis.',
-        },
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      temperature: 0.3, // Lower temperature for more consistent analysis
-      max_tokens: 2000,
-      response_format: { type: 'json_object' }, // Force JSON response
-    });
+    try {
+      const completion = await openai.chat.completions.create({
+        model: model, // GPT-4 Optimized (faster and cheaper than gpt-4-turbo)
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert real estate investment advisor with 20+ years of experience analyzing rental properties. Provide detailed, actionable analysis.',
+          },
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        temperature: 0.3, // Lower temperature for more consistent analysis
+        max_tokens: 2000,
+        response_format: { type: 'json_object' }, // Force JSON response
+      });
 
-    const content = completion.choices[0]?.message?.content;
-    if (!content) {
-      console.error('OpenAI returned empty response');
-      throw new Error('No response from OpenAI API');
+      const content = completion.choices[0]?.message?.content;
+      if (!content) {
+        console.error('OpenAI returned empty response');
+        throw new Error('No response from OpenAI API');
+      }
+
+      console.log('OpenAI response received, parsing...');
+      const recommendation = parseInvestmentRecommendation(content, data);
+      return recommendation;
+    } catch (apiError: any) {
+      // Log detailed error information
+      console.error('OpenAI API Error Details:', {
+        status: apiError?.status,
+        statusText: apiError?.statusText,
+        message: apiError?.message,
+        code: apiError?.code,
+        type: apiError?.type,
+        error: apiError?.error,
+      });
+      
+      // If gpt-4o fails, try gpt-4-turbo as fallback
+      if (apiError?.status === 404 || apiError?.message?.includes('model') || apiError?.code === 'model_not_found') {
+        console.log('gpt-4o not available, trying gpt-4-turbo...');
+        try {
+          const completion = await openai.chat.completions.create({
+            model: 'gpt-4-turbo',
+            messages: [
+              {
+                role: 'system',
+                content: 'You are an expert real estate investment advisor with 20+ years of experience analyzing rental properties. Provide detailed, actionable analysis.',
+              },
+              {
+                role: 'user',
+                content: prompt,
+              },
+            ],
+            temperature: 0.3,
+            max_tokens: 2000,
+            response_format: { type: 'json_object' },
+          });
+          
+          const content = completion.choices[0]?.message?.content;
+          if (!content) {
+            throw new Error('No response from OpenAI API');
+          }
+          
+          const recommendation = parseInvestmentRecommendation(content, data);
+          return recommendation;
+        } catch (fallbackError: any) {
+          console.error('Fallback model also failed:', {
+            status: fallbackError?.status,
+            message: fallbackError?.message,
+            code: fallbackError?.code,
+          });
+          throw apiError; // Throw original error
+        }
+      }
+      throw apiError;
     }
-
-    console.log('OpenAI response received, parsing...');
-    const recommendation = parseInvestmentRecommendation(content, data);
-    return recommendation;
   } catch (error) {
     console.error('OpenAI Investment Advisor error:', error);
     
@@ -125,7 +188,15 @@ export async function chatWithAssistant(
 ): Promise<string> {
   const systemPrompt = buildChatAssistantSystemPrompt(propertyData);
 
+  // Validate API key
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('OPENAI_API_KEY is not configured');
+  }
+
   try {
+    // Initialize client with current API key
+    const openai = getOpenAIClient();
+    
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
       {
         role: 'system',
