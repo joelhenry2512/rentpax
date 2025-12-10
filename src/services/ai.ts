@@ -71,56 +71,22 @@ export async function generateInvestmentRecommendation(
     // Initialize client with current API key
     const gemini = getGeminiClient();
     
-    // Use Gemini 2.0 Flash (fast and capable) or Gemini 1.5 Pro
-    const model = 'gemini-2.0-flash-exp';
-    console.log(`Calling Gemini API with model: ${model}`);
+    // Use stable Gemini 1.5 Flash model (more reliable than experimental models)
+    const models = ['gemini-1.5-flash', 'gemini-1.5-pro'];
     console.log(`API Key present: ${!!process.env.GEMINI_API_KEY}`);
     console.log(`API Key starts with: ${process.env.GEMINI_API_KEY?.substring(0, 7) || 'N/A'}`);
     
-    try {
-      const completion = await gemini.chat.completions.create({
-        model: model,
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an expert real estate investment advisor with 20+ years of experience analyzing rental properties. Provide detailed, actionable analysis.',
-          },
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-        temperature: 0.3, // Lower temperature for more consistent analysis
-        max_tokens: 2000,
-        response_format: { type: 'json_object' }, // Force JSON response
-      });
-
-      const content = completion.choices[0]?.message?.content;
-      if (!content) {
-        console.error('Gemini returned empty response');
-        throw new Error('No response from Gemini API');
-      }
-
-      console.log('Gemini response received, parsing...');
-      const recommendation = parseInvestmentRecommendation(content, data);
-      return recommendation;
-    } catch (apiError: any) {
-      // Log detailed error information
-      console.error('Gemini API Error Details:', {
-        status: apiError?.status,
-        statusText: apiError?.statusText,
-        message: apiError?.message,
-        code: apiError?.code,
-        type: apiError?.type,
-        error: apiError?.error,
-      });
+    // Try models in order with retry logic for rate limits
+    for (const model of models) {
+      console.log(`Trying Gemini API with model: ${model}`);
       
-      // If gemini-2.0-flash-exp fails, try gemini-1.5-pro as fallback
-      if (apiError?.status === 404 || apiError?.message?.includes('model') || apiError?.code === 'model_not_found') {
-        console.log('gemini-2.0-flash-exp not available, trying gemini-1.5-pro...');
+      let lastError: any = null;
+      const maxRetries = 3;
+      
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
           const completion = await gemini.chat.completions.create({
-            model: 'gemini-1.5-pro',
+            model: model,
             messages: [
               {
                 role: 'system',
@@ -131,39 +97,76 @@ export async function generateInvestmentRecommendation(
                 content: prompt,
               },
             ],
-            temperature: 0.3,
+            temperature: 0.3, // Lower temperature for more consistent analysis
             max_tokens: 2000,
-            response_format: { type: 'json_object' },
+            response_format: { type: 'json_object' }, // Force JSON response
           });
-          
+
           const content = completion.choices[0]?.message?.content;
           if (!content) {
+            console.error('Gemini returned empty response');
             throw new Error('No response from Gemini API');
           }
-          
+
+          console.log('Gemini response received, parsing...');
           const recommendation = parseInvestmentRecommendation(content, data);
           return recommendation;
-        } catch (fallbackError: any) {
-          console.error('Fallback model also failed:', {
-            status: fallbackError?.status,
-            message: fallbackError?.message,
-            code: fallbackError?.code,
-          });
-          throw apiError; // Throw original error
+        } catch (apiError: any) {
+          lastError = apiError;
+          
+          // Handle rate limit (429) with exponential backoff
+          if (apiError?.status === 429 && attempt < maxRetries - 1) {
+            const waitTime = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
+            console.log(`Rate limit hit (429), retrying in ${waitTime}ms (attempt ${attempt + 1}/${maxRetries})...`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+            continue; // Retry
+          }
+          
+          // If it's not a rate limit or we've exhausted retries, break and try next model
+          if (apiError?.status !== 429) {
+            break;
+          }
         }
       }
-      throw apiError;
+      
+      // If we got here and lastError is a 429, it means all retries failed
+      if (lastError?.status === 429) {
+        console.error(`Model ${model} rate limited after ${maxRetries} attempts`);
+        continue; // Try next model
+      }
+      
+      // If it's a model not found error, try next model
+      if (lastError?.status === 404 || lastError?.message?.includes('model') || lastError?.code === 'model_not_found') {
+        console.log(`Model ${model} not available, trying next model...`);
+        continue;
+      }
+      
+      // For other errors, log and try next model
+      if (lastError) {
+        console.error(`Model ${model} failed:`, {
+          status: lastError?.status,
+          message: lastError?.message,
+          code: lastError?.code,
+        });
+        continue;
+      }
     }
-  } catch (error) {
+    
+    // If all models failed, throw the last error
+    throw lastError || new Error('All Gemini models failed');
+  } catch (error: any) {
     console.error('Gemini Investment Advisor error:', error);
     
     // Provide more specific error messages
+    if (error?.status === 429) {
+      throw new Error('Gemini API rate limit exceeded. Please wait a moment and try again. Free tier has rate limits.');
+    }
     if (error instanceof Error) {
       if (error.message.includes('API key')) {
         throw new Error('Invalid Gemini API key. Please check your GEMINI_API_KEY environment variable.');
       }
       if (error.message.includes('rate limit')) {
-        throw new Error('Gemini API rate limit exceeded. Please try again later.');
+        throw new Error('Gemini API rate limit exceeded. Please try again in a few seconds.');
       }
       if (error.message.includes('model')) {
         throw new Error('Gemini model not available. Please check your API access.');
@@ -214,21 +217,54 @@ export async function chatWithAssistant(
       },
     ];
 
-    const completion = await gemini.chat.completions.create({
-      model: 'gemini-2.0-flash-exp', // Gemini 2.0 Flash
-      messages,
-      temperature: 0.7, // Slightly higher for conversational tone
-      max_tokens: 1000,
-    });
+    // Retry logic for rate limits
+    const maxRetries = 3;
+    let lastError: any = null;
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const completion = await gemini.chat.completions.create({
+          model: 'gemini-1.5-flash', // Gemini 1.5 Flash (stable model)
+          messages,
+          temperature: 0.7, // Slightly higher for conversational tone
+          max_tokens: 1000,
+        });
 
-    const content = completion.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error('No response from Gemini');
+        const content = completion.choices[0]?.message?.content;
+        if (!content) {
+          throw new Error('No response from Gemini');
+        }
+
+        return content;
+      } catch (apiError: any) {
+        lastError = apiError;
+        
+        // Handle rate limit (429) with exponential backoff
+        if (apiError?.status === 429 && attempt < maxRetries - 1) {
+          const waitTime = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
+          console.log(`Chat rate limit hit (429), retrying in ${waitTime}ms (attempt ${attempt + 1}/${maxRetries})...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          continue; // Retry
+        }
+        
+        // For non-rate-limit errors, break and throw
+        break;
+      }
     }
-
-    return content;
-  } catch (error) {
+    
+    // If we exhausted retries for rate limit
+    if (lastError?.status === 429) {
+      throw new Error('Gemini API rate limit exceeded. Please wait a moment and try again.');
+    }
+    
+    throw lastError || new Error('Failed to get AI response');
+  } catch (error: any) {
     console.error('Gemini Chat Assistant error:', error);
+    
+    if (error?.status === 429) {
+      throw new Error('Gemini API rate limit exceeded. Please try again in a few seconds.');
+    }
+    
     throw new Error('Failed to get AI response');
   }
 }
