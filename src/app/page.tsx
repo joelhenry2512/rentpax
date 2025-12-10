@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import SettingsDrawer from "@/components/SettingsDrawer";
-import ScenarioCompare from "@/components/ScenarioCompare";
 import CompsSelector from "@/components/CompsSelector";
 import AnalysisResults from "@/components/analysis/AnalysisResults";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
@@ -258,12 +257,6 @@ export default function Home() {
             interestRate={rate / 100}
             downPaymentPercent={down / 100}
           />
-
-          <ScenarioCompare scenarios={[
-            { name: "10% + PMI", rate: rate, down: 0.10, piti: data.finance.PITI + 150, cashFlow: data.finance.cashFlow - 150 },
-            { name: "20% down", rate: rate, down: 0.20, piti: data.finance.PITI, cashFlow: data.finance.cashFlow },
-            { name: "3-2-1 Buydown (Yr1)", rate: Math.max(rate-3, 0), down: down/100, piti: data.finance.PITI - 300, cashFlow: data.finance.cashFlow + 300 }
-          ]} />
 
           {data.comps && data.comps.length > 0 && (
             <CompsSelector

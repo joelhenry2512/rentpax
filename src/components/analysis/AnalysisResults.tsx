@@ -7,8 +7,6 @@ import ProjectionsView from "@/components/ProjectionsView";
 import CashFlowChart from "@/components/charts/CashFlowChart";
 import ROIChart from "@/components/charts/ROIChart";
 import ExpenseBreakdown from "@/components/charts/ExpenseBreakdown";
-import AIInvestmentAdvisor from "@/components/AIInvestmentAdvisor";
-import AIChatAssistant from "@/components/AIChatAssistant";
 import type { AnalysisData } from "@/services/export";
 
 interface AnalysisResultsProps {
@@ -42,26 +40,6 @@ export default function AnalysisResults({
     { name: 'Management', amount: -(data.rent.estimate * management / 100), color: '#06B6D4' }
   ];
 
-  // Prepare AI property data
-  const aiPropertyData = {
-    address: data.address,
-    homeValue: data.property.avm,
-    rentEstimate: data.rent.estimate,
-    downPayment: data.property.avm * downPaymentPercent,
-    loanAmount: data.property.avm * (1 - downPaymentPercent),
-    monthlyPayment: data.finance.PI,
-    monthlyPITI: data.finance.PITI,
-    monthlyCashFlow: data.finance.cashFlow,
-    capRate: data.finance.capRate,
-    cashOnCashReturn: data.finance.coc,
-    appreciationRate: 0.03,
-    rentGrowthRate: 0.02,
-    propertyType: 'Single Family',
-    beds: data.property.beds,
-    baths: data.property.baths,
-    sqft: data.property.sqft,
-  };
-
   return (
     <>
       {/* Property Photos and Details */}
@@ -72,9 +50,6 @@ export default function AnalysisResults({
         baths={data.property.baths}
         sqft={data.property.sqft}
       />
-
-      {/* AI Investment Advisor */}
-      <AIInvestmentAdvisor propertyData={aiPropertyData} />
 
       {/* Summary Cards */}
       <section className="grid md:grid-cols-3 gap-4 mb-6">
@@ -241,8 +216,6 @@ export default function AnalysisResults({
         }}
       />
 
-      {/* AI Chat Assistant (floating button) */}
-      <AIChatAssistant propertyData={aiPropertyData} />
     </>
   );
 }
