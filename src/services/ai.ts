@@ -3,19 +3,15 @@
  * Provides investment analysis and chat assistance
  */
 
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Initialize Gemini client lazily to ensure API key is available
-// Using OpenAI-compatible endpoint for Gemini
 function getGeminiClient() {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error('GEMINI_API_KEY is not configured');
   }
-  return new OpenAI({
-    apiKey: apiKey,
-    baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai',
-  });
+  return new GoogleGenerativeAI(apiKey);
 }
 
 export interface PropertyAnalysisData {
@@ -69,41 +65,37 @@ export async function generateInvestmentRecommendation(
 
   try {
     // Initialize client with current API key
-    const gemini = getGeminiClient();
+    const genAI = getGeminiClient();
     
     // Use stable Gemini 1.5 Flash model (more reliable than experimental models)
     const models = ['gemini-1.5-flash', 'gemini-1.5-pro'];
     console.log(`API Key present: ${!!process.env.GEMINI_API_KEY}`);
     console.log(`API Key starts with: ${process.env.GEMINI_API_KEY?.substring(0, 7) || 'N/A'}`);
     
+    // Build the prompt with explicit JSON instruction
+    const systemInstruction = 'You are an expert real estate investment advisor with 20+ years of experience analyzing rental properties. Provide detailed, actionable analysis. Always respond with valid JSON only.';
+    const jsonPrompt = `${prompt}\n\nIMPORTANT: You must respond with ONLY valid JSON. Do not include any text before or after the JSON.`;
+    
     // Track last error across all model attempts
     let lastError: any = null;
     
     // Try models in order with retry logic for rate limits
-    for (const model of models) {
-      console.log(`Trying Gemini API with model: ${model}`);
+    for (const modelName of models) {
+      console.log(`Trying Gemini API with model: ${modelName}`);
       const maxRetries = 3;
       
       for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
-          const completion = await gemini.chat.completions.create({
-            model: model,
-            messages: [
-              {
-                role: 'system',
-                content: 'You are an expert real estate investment advisor with 20+ years of experience analyzing rental properties. Provide detailed, actionable analysis.',
-              },
-              {
-                role: 'user',
-                content: prompt,
-              },
-            ],
-            temperature: 0.3, // Lower temperature for more consistent analysis
-            max_tokens: 2000,
-            response_format: { type: 'json_object' }, // Force JSON response
+          const model = genAI.getGenerativeModel({ 
+            model: modelName,
+            systemInstruction: systemInstruction,
           });
+          
+          const result = await model.generateContent(jsonPrompt);
 
-          const content = completion.choices[0]?.message?.content;
+          const response = result.response;
+          const content = response.text();
+          
           if (!content) {
             console.error('Gemini returned empty response');
             throw new Error('No response from Gemini API');
@@ -116,7 +108,8 @@ export async function generateInvestmentRecommendation(
           lastError = apiError;
           
           // Handle rate limit (429) with exponential backoff
-          if (apiError?.status === 429 && attempt < maxRetries - 1) {
+          const statusCode = apiError?.status || apiError?.statusCode || apiError?.code;
+          if (statusCode === 429 && attempt < maxRetries - 1) {
             const waitTime = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
             console.log(`Rate limit hit (429), retrying in ${waitTime}ms (attempt ${attempt + 1}/${maxRetries})...`);
             await new Promise(resolve => setTimeout(resolve, waitTime));
@@ -124,28 +117,29 @@ export async function generateInvestmentRecommendation(
           }
           
           // If it's not a rate limit or we've exhausted retries, break and try next model
-          if (apiError?.status !== 429) {
+          if (statusCode !== 429) {
             break;
           }
         }
       }
       
       // If we got here and lastError is a 429, it means all retries failed
-      if (lastError?.status === 429) {
-        console.error(`Model ${model} rate limited after ${maxRetries} attempts`);
+      const lastStatusCode = lastError?.status || lastError?.statusCode || lastError?.code;
+      if (lastStatusCode === 429) {
+        console.error(`Model ${modelName} rate limited after ${maxRetries} attempts`);
         continue; // Try next model
       }
       
       // If it's a model not found error, try next model
-      if (lastError?.status === 404 || lastError?.message?.includes('model') || lastError?.code === 'model_not_found') {
-        console.log(`Model ${model} not available, trying next model...`);
+      if (lastStatusCode === 404 || lastError?.message?.includes('model') || lastError?.message?.includes('not found')) {
+        console.log(`Model ${modelName} not available, trying next model...`);
         continue;
       }
       
       // For other errors, log and try next model
       if (lastError) {
-        console.error(`Model ${model} failed:`, {
-          status: lastError?.status,
+        console.error(`Model ${modelName} failed:`, {
+          status: lastStatusCode,
           message: lastError?.message,
           code: lastError?.code,
         });
@@ -201,22 +195,26 @@ export async function chatWithAssistant(
 
   try {
     // Initialize client with current API key
-    const gemini = getGeminiClient();
+    const genAI = getGeminiClient();
     
-    const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-      {
-        role: 'system',
-        content: systemPrompt,
-      },
-      ...(conversationHistory || []).map((msg) => ({
-        role: msg.role as 'user' | 'assistant',
-        content: msg.content,
-      })),
-      {
-        role: 'user',
-        content: question,
-      },
-    ];
+    // Build conversation history for Gemini
+    const parts: Array<{ role: string; parts: Array<{ text: string }> }> = [];
+    
+    // Add conversation history
+    if (conversationHistory && conversationHistory.length > 0) {
+      for (const msg of conversationHistory) {
+        parts.push({
+          role: msg.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: msg.content }],
+        });
+      }
+    }
+    
+    // Add current question
+    parts.push({
+      role: 'user',
+      parts: [{ text: question }],
+    });
 
     // Retry logic for rate limits
     const maxRetries = 3;
@@ -224,14 +222,20 @@ export async function chatWithAssistant(
     
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
-        const completion = await gemini.chat.completions.create({
-          model: 'gemini-1.5-flash', // Gemini 1.5 Flash (stable model)
-          messages,
-          temperature: 0.7, // Slightly higher for conversational tone
-          max_tokens: 1000,
+        const model = genAI.getGenerativeModel({ 
+          model: 'gemini-1.5-flash',
+          systemInstruction: systemPrompt,
+        });
+        
+        const result = await model.generateContent({
+          contents: parts,
+          generationConfig: {
+            temperature: 0.7, // Slightly higher for conversational tone
+            maxOutputTokens: 1000,
+          },
         });
 
-        const content = completion.choices[0]?.message?.content;
+        const content = result.response.text();
         if (!content) {
           throw new Error('No response from Gemini');
         }
@@ -241,7 +245,8 @@ export async function chatWithAssistant(
         lastError = apiError;
         
         // Handle rate limit (429) with exponential backoff
-        if (apiError?.status === 429 && attempt < maxRetries - 1) {
+        const statusCode = apiError?.status || apiError?.statusCode || apiError?.code;
+        if (statusCode === 429 && attempt < maxRetries - 1) {
           const waitTime = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
           console.log(`Chat rate limit hit (429), retrying in ${waitTime}ms (attempt ${attempt + 1}/${maxRetries})...`);
           await new Promise(resolve => setTimeout(resolve, waitTime));
@@ -254,7 +259,8 @@ export async function chatWithAssistant(
     }
     
     // If we exhausted retries for rate limit
-    if (lastError?.status === 429) {
+    const lastStatusCode = lastError?.status || lastError?.statusCode || lastError?.code;
+    if (lastStatusCode === 429) {
       throw new Error('Gemini API rate limit exceeded. Please wait a moment and try again.');
     }
     

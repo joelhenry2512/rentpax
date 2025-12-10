@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,21 +30,22 @@ export async function GET(request: NextRequest) {
 
     // Test the API key with a simple request
     try {
-      const gemini = new OpenAI({
-        apiKey: apiKey,
-        baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai',
-      });
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       
-      const testCompletion = await gemini.chat.completions.create({
-        model: 'gemini-1.5-flash',
-        messages: [{ role: 'user', content: 'Say "API test successful"' }],
-        max_tokens: 10,
+      const result = await model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: 'Say "API test successful"' }] }],
+        generationConfig: {
+          maxOutputTokens: 10,
+        },
       });
+
+      const response = result.response.text();
 
       return NextResponse.json({
         ...diagnostics,
         status: 'success',
-        geminiResponse: testCompletion.choices[0]?.message?.content || 'No response',
+        geminiResponse: response || 'No response',
         model: 'gemini-1.5-flash',
         message: 'Gemini API is working correctly!',
       });
