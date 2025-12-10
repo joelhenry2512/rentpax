@@ -89,6 +89,10 @@ export async function generateInvestmentRecommendation(
           const model = genAI.getGenerativeModel({ 
             model: modelName,
             systemInstruction: systemInstruction,
+            generationConfig: {
+              temperature: 0.3,
+              maxOutputTokens: 2000,
+            },
           });
           
           const result = await model.generateContent(jsonPrompt);
@@ -106,6 +110,16 @@ export async function generateInvestmentRecommendation(
           return recommendation;
         } catch (apiError: any) {
           lastError = apiError;
+          
+          // Log detailed error for debugging
+          console.error(`Gemini API error (attempt ${attempt + 1}):`, {
+            message: apiError?.message,
+            status: apiError?.status,
+            statusCode: apiError?.statusCode,
+            code: apiError?.code,
+            name: apiError?.name,
+            stack: apiError?.stack?.substring(0, 200),
+          });
           
           // Handle rate limit (429) with exponential backoff
           const statusCode = apiError?.status || apiError?.statusCode || apiError?.code;
@@ -206,6 +220,10 @@ export async function chatWithAssistant(
         const model = genAI.getGenerativeModel({ 
           model: 'gemini-1.5-flash',
           systemInstruction: systemPrompt,
+          generationConfig: {
+            temperature: 0.7, // Slightly higher for conversational tone
+            maxOutputTokens: 1000,
+          },
         });
         
         // Build the full prompt with conversation history
@@ -217,13 +235,7 @@ export async function chatWithAssistant(
           fullPrompt = `Previous conversation:\n${historyText}\n\nUser: ${question}`;
         }
         
-        const result = await model.generateContent({
-          contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],
-          generationConfig: {
-            temperature: 0.7, // Slightly higher for conversational tone
-            maxOutputTokens: 1000,
-          },
-        });
+        const result = await model.generateContent(fullPrompt);
 
         const content = result.response.text();
         if (!content) {

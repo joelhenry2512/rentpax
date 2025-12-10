@@ -31,15 +31,14 @@ export async function GET(request: NextRequest) {
     // Test the API key with a simple request
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-      
-      const result = await model.generateContent({
-        contents: [{ role: 'user', parts: [{ text: 'Say "API test successful"' }] }],
+      const model = genAI.getGenerativeModel({ 
+        model: 'gemini-1.5-flash',
         generationConfig: {
           maxOutputTokens: 10,
         },
       });
-
+      
+      const result = await model.generateContent('Say "API test successful"');
       const response = result.response.text();
 
       return NextResponse.json({
@@ -50,6 +49,7 @@ export async function GET(request: NextRequest) {
         message: 'Gemini API is working correctly!',
       });
     } catch (geminiError: any) {
+      console.error('Gemini test error:', geminiError);
       return NextResponse.json(
         {
           ...diagnostics,
@@ -57,10 +57,13 @@ export async function GET(request: NextRequest) {
           error: 'Gemini API call failed',
           geminiError: {
             status: geminiError?.status,
+            statusCode: geminiError?.statusCode,
             statusText: geminiError?.statusText,
             message: geminiError?.message,
             code: geminiError?.code,
+            name: geminiError?.name,
             type: geminiError?.type,
+            stack: geminiError?.stack?.substring(0, 500),
           },
           suggestions: [
             'Verify the API key is correct in Vercel',
