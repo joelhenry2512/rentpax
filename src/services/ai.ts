@@ -53,9 +53,18 @@ export async function generateInvestmentRecommendation(
 ): Promise<InvestmentRecommendation> {
   const prompt = buildInvestmentAdvisorPrompt(data);
 
+  // Validate API key
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('OPENAI_API_KEY is not configured');
+  }
+
   try {
+    // Try gpt-4o first, fallback to gpt-4-turbo if needed
+    const model = 'gpt-4o';
+    console.log(`Calling OpenAI API with model: ${model}`);
+    
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o', // GPT-4 Optimized (faster and cheaper than gpt-4-turbo)
+      model: model, // GPT-4 Optimized (faster and cheaper than gpt-4-turbo)
       messages: [
         {
           role: 'system',
@@ -73,14 +82,31 @@ export async function generateInvestmentRecommendation(
 
     const content = completion.choices[0]?.message?.content;
     if (!content) {
-      throw new Error('No response from OpenAI');
+      console.error('OpenAI returned empty response');
+      throw new Error('No response from OpenAI API');
     }
 
+    console.log('OpenAI response received, parsing...');
     const recommendation = parseInvestmentRecommendation(content, data);
     return recommendation;
   } catch (error) {
     console.error('OpenAI Investment Advisor error:', error);
-    throw new Error('Failed to generate investment recommendation');
+    
+    // Provide more specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes('API key')) {
+        throw new Error('Invalid OpenAI API key. Please check your OPENAI_API_KEY environment variable.');
+      }
+      if (error.message.includes('rate limit')) {
+        throw new Error('OpenAI API rate limit exceeded. Please try again later.');
+      }
+      if (error.message.includes('model')) {
+        throw new Error('OpenAI model not available. Please check your API access.');
+      }
+      throw new Error(`OpenAI API error: ${error.message}`);
+    }
+    
+    throw new Error('Failed to generate investment recommendation: Unknown error');
   }
 }
 
