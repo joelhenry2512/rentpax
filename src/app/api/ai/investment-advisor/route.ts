@@ -43,17 +43,18 @@ export async function POST(request: NextRequest) {
     console.log('Received request body:', JSON.stringify(body, null, 2));
 
     // Sanitize numeric values to ensure they're finite numbers
+    // Don't set to 0 for required positive fields - let validation catch invalid values
     const sanitizedBody = {
       ...body,
-      homeValue: typeof body.homeValue === 'number' && isFinite(body.homeValue) ? body.homeValue : 0,
-      rentEstimate: typeof body.rentEstimate === 'number' && isFinite(body.rentEstimate) ? body.rentEstimate : 0,
-      downPayment: typeof body.downPayment === 'number' && isFinite(body.downPayment) ? body.downPayment : 0,
-      loanAmount: typeof body.loanAmount === 'number' && isFinite(body.loanAmount) ? body.loanAmount : 0,
-      monthlyPayment: typeof body.monthlyPayment === 'number' && isFinite(body.monthlyPayment) ? body.monthlyPayment : 0,
-      monthlyPITI: typeof body.monthlyPITI === 'number' && isFinite(body.monthlyPITI) ? body.monthlyPITI : 0,
-      monthlyCashFlow: typeof body.monthlyCashFlow === 'number' && isFinite(body.monthlyCashFlow) ? body.monthlyCashFlow : 0,
-      capRate: typeof body.capRate === 'number' && isFinite(body.capRate) ? body.capRate : 0,
-      cashOnCashReturn: typeof body.cashOnCashReturn === 'number' && isFinite(body.cashOnCashReturn) ? body.cashOnCashReturn : 0,
+      homeValue: typeof body.homeValue === 'number' && isFinite(body.homeValue) ? body.homeValue : (typeof body.homeValue === 'string' ? parseFloat(body.homeValue) : body.homeValue),
+      rentEstimate: typeof body.rentEstimate === 'number' && isFinite(body.rentEstimate) ? body.rentEstimate : (typeof body.rentEstimate === 'string' ? parseFloat(body.rentEstimate) : body.rentEstimate),
+      downPayment: typeof body.downPayment === 'number' && isFinite(body.downPayment) ? body.downPayment : (typeof body.downPayment === 'string' ? parseFloat(body.downPayment) : body.downPayment),
+      loanAmount: typeof body.loanAmount === 'number' && isFinite(body.loanAmount) ? body.loanAmount : (typeof body.loanAmount === 'string' ? parseFloat(body.loanAmount) : body.loanAmount),
+      monthlyPayment: typeof body.monthlyPayment === 'number' && isFinite(body.monthlyPayment) ? body.monthlyPayment : (typeof body.monthlyPayment === 'string' ? parseFloat(body.monthlyPayment) : body.monthlyPayment),
+      monthlyPITI: typeof body.monthlyPITI === 'number' && isFinite(body.monthlyPITI) ? body.monthlyPITI : (typeof body.monthlyPITI === 'string' ? parseFloat(body.monthlyPITI) : body.monthlyPITI),
+      monthlyCashFlow: typeof body.monthlyCashFlow === 'number' && isFinite(body.monthlyCashFlow) ? body.monthlyCashFlow : (typeof body.monthlyCashFlow === 'string' ? parseFloat(body.monthlyCashFlow) : body.monthlyCashFlow),
+      capRate: typeof body.capRate === 'number' && isFinite(body.capRate) ? body.capRate : (typeof body.capRate === 'string' ? parseFloat(body.capRate) : body.capRate),
+      cashOnCashReturn: typeof body.cashOnCashReturn === 'number' && isFinite(body.cashOnCashReturn) ? body.cashOnCashReturn : (typeof body.cashOnCashReturn === 'string' ? parseFloat(body.cashOnCashReturn) : body.cashOnCashReturn),
     };
 
     // Validate the data

@@ -106,8 +106,16 @@ export async function generateInvestmentRecommendation(
           }
 
           console.log('Gemini response received, parsing...');
-          const recommendation = parseInvestmentRecommendation(content, data);
-          return recommendation;
+          console.log('Response content (first 500 chars):', content.substring(0, 500));
+          
+          try {
+            const recommendation = parseInvestmentRecommendation(content, data);
+            return recommendation;
+          } catch (parseError: any) {
+            console.error('Error parsing recommendation:', parseError);
+            console.error('Full response content:', content);
+            throw new Error(`Failed to parse AI response: ${parseError.message}`);
+          }
         } catch (apiError: any) {
           lastError = apiError;
           
@@ -374,8 +382,22 @@ function parseInvestmentRecommendation(
   data: PropertyAnalysisData
 ): InvestmentRecommendation {
   try {
+    // Clean the response - remove markdown code blocks if present
+    let cleanedResponse = aiResponse.trim();
+    
+    // Remove markdown code blocks (```json ... ```)
+    if (cleanedResponse.startsWith('```')) {
+      cleanedResponse = cleanedResponse.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+    }
+    
+    // Try to extract JSON if there's extra text
+    const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      cleanedResponse = jsonMatch[0];
+    }
+    
     // Parse JSON response
-    const parsed = JSON.parse(aiResponse);
+    const parsed = JSON.parse(cleanedResponse);
 
     // Calculate predicted returns based on current metrics
     const year5Return = Math.round(
