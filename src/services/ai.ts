@@ -197,25 +197,6 @@ export async function chatWithAssistant(
     // Initialize client with current API key
     const genAI = getGeminiClient();
     
-    // Build conversation history for Gemini
-    const parts: Array<{ role: string; parts: Array<{ text: string }> }> = [];
-    
-    // Add conversation history
-    if (conversationHistory && conversationHistory.length > 0) {
-      for (const msg of conversationHistory) {
-        parts.push({
-          role: msg.role === 'assistant' ? 'model' : 'user',
-          parts: [{ text: msg.content }],
-        });
-      }
-    }
-    
-    // Add current question
-    parts.push({
-      role: 'user',
-      parts: [{ text: question }],
-    });
-
     // Retry logic for rate limits
     const maxRetries = 3;
     let lastError: any = null;
@@ -227,8 +208,17 @@ export async function chatWithAssistant(
           systemInstruction: systemPrompt,
         });
         
+        // Build the full prompt with conversation history
+        let fullPrompt = question;
+        if (conversationHistory && conversationHistory.length > 0) {
+          const historyText = conversationHistory
+            .map(msg => `${msg.role === 'assistant' ? 'Assistant' : 'User'}: ${msg.content}`)
+            .join('\n\n');
+          fullPrompt = `Previous conversation:\n${historyText}\n\nUser: ${question}`;
+        }
+        
         const result = await model.generateContent({
-          contents: parts,
+          contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],
           generationConfig: {
             temperature: 0.7, // Slightly higher for conversational tone
             maxOutputTokens: 1000,
