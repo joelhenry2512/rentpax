@@ -76,11 +76,12 @@ export async function generateInvestmentRecommendation(
     console.log(`API Key present: ${!!process.env.GEMINI_API_KEY}`);
     console.log(`API Key starts with: ${process.env.GEMINI_API_KEY?.substring(0, 7) || 'N/A'}`);
     
+    // Track last error across all model attempts
+    let lastError: any = null;
+    
     // Try models in order with retry logic for rate limits
     for (const model of models) {
       console.log(`Trying Gemini API with model: ${model}`);
-      
-      let lastError: any = null;
       const maxRetries = 3;
       
       for (let attempt = 0; attempt < maxRetries; attempt++) {
