@@ -95,7 +95,7 @@ export default function AIInvestmentAdvisor({ propertyData }: AIInvestmentAdviso
           </div>
           <div>
             <h2 className="text-xl font-semibold">AI Investment Advisor</h2>
-            <p className="text-sm text-gray-600">Powered by OpenAI GPT-4</p>
+            <p className="text-sm text-gray-600">Powered by Google Gemini</p>
           </div>
         </div>
 

@@ -1,5 +1,5 @@
 /**
- * Diagnostic endpoint to test OpenAI API configuration
+ * Diagnostic endpoint to test Gemini API configuration
  * This helps debug API key and connection issues
  */
 
@@ -8,7 +8,7 @@ import OpenAI from 'openai';
 
 export async function GET(request: NextRequest) {
   try {
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     
     const diagnostics = {
       apiKeyPresent: !!apiKey,
@@ -21,8 +21,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         {
           ...diagnostics,
-          error: 'OPENAI_API_KEY is not set in environment variables',
-          instructions: 'Add OPENAI_API_KEY to Vercel environment variables and redeploy',
+          error: 'GEMINI_API_KEY is not set in environment variables',
+          instructions: 'Add GEMINI_API_KEY to Vercel environment variables and redeploy',
         },
         { status: 503 }
       );
@@ -30,10 +30,13 @@ export async function GET(request: NextRequest) {
 
     // Test the API key with a simple request
     try {
-      const openai = new OpenAI({ apiKey });
+      const gemini = new OpenAI({
+        apiKey: apiKey,
+        baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai',
+      });
       
-      const testCompletion = await openai.chat.completions.create({
-        model: 'gpt-4o',
+      const testCompletion = await gemini.chat.completions.create({
+        model: 'gemini-2.0-flash-exp',
         messages: [{ role: 'user', content: 'Say "API test successful"' }],
         max_tokens: 10,
       });
@@ -41,28 +44,29 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         ...diagnostics,
         status: 'success',
-        openaiResponse: testCompletion.choices[0]?.message?.content || 'No response',
-        model: 'gpt-4o',
-        message: 'OpenAI API is working correctly!',
+        geminiResponse: testCompletion.choices[0]?.message?.content || 'No response',
+        model: 'gemini-2.0-flash-exp',
+        message: 'Gemini API is working correctly!',
       });
-    } catch (openaiError: any) {
+    } catch (geminiError: any) {
       return NextResponse.json(
         {
           ...diagnostics,
           status: 'error',
-          error: 'OpenAI API call failed',
-          openaiError: {
-            status: openaiError?.status,
-            statusText: openaiError?.statusText,
-            message: openaiError?.message,
-            code: openaiError?.code,
-            type: openaiError?.type,
+          error: 'Gemini API call failed',
+          geminiError: {
+            status: geminiError?.status,
+            statusText: geminiError?.statusText,
+            message: geminiError?.message,
+            code: geminiError?.code,
+            type: geminiError?.type,
           },
           suggestions: [
             'Verify the API key is correct in Vercel',
-            'Check if the API key has access to gpt-4o model',
-            'Verify you have credits in your OpenAI account',
+            'Check if the API key has access to Gemini models',
+            'Verify you have credits/quota in your Google AI Studio account',
             'Check Vercel logs for more details',
+            'Get your API key from: https://aistudio.google.com/app/apikey',
           ],
         },
         { status: 500 }

@@ -1,18 +1,20 @@
 /**
- * AI Service Layer using OpenAI GPT-4 API
+ * AI Service Layer using Google Gemini API
  * Provides investment analysis and chat assistance
  */
 
 import OpenAI from 'openai';
 
-// Initialize OpenAI client lazily to ensure API key is available
-function getOpenAIClient() {
-  const apiKey = process.env.OPENAI_API_KEY;
+// Initialize Gemini client lazily to ensure API key is available
+// Using OpenAI-compatible endpoint for Gemini
+function getGeminiClient() {
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    throw new Error('OPENAI_API_KEY is not configured');
+    throw new Error('GEMINI_API_KEY is not configured');
   }
   return new OpenAI({
     apiKey: apiKey,
+    baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai',
   });
 }
 
@@ -61,23 +63,23 @@ export async function generateInvestmentRecommendation(
   const prompt = buildInvestmentAdvisorPrompt(data);
 
   // Validate API key
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error('OPENAI_API_KEY is not configured');
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error('GEMINI_API_KEY is not configured');
   }
 
   try {
     // Initialize client with current API key
-    const openai = getOpenAIClient();
+    const gemini = getGeminiClient();
     
-    // Try gpt-4o first, fallback to gpt-4-turbo if needed
-    const model = 'gpt-4o';
-    console.log(`Calling OpenAI API with model: ${model}`);
-    console.log(`API Key present: ${!!process.env.OPENAI_API_KEY}`);
-    console.log(`API Key starts with: ${process.env.OPENAI_API_KEY?.substring(0, 7) || 'N/A'}`);
+    // Use Gemini 2.0 Flash (fast and capable) or Gemini 1.5 Pro
+    const model = 'gemini-2.0-flash-exp';
+    console.log(`Calling Gemini API with model: ${model}`);
+    console.log(`API Key present: ${!!process.env.GEMINI_API_KEY}`);
+    console.log(`API Key starts with: ${process.env.GEMINI_API_KEY?.substring(0, 7) || 'N/A'}`);
     
     try {
-      const completion = await openai.chat.completions.create({
-        model: model, // GPT-4 Optimized (faster and cheaper than gpt-4-turbo)
+      const completion = await gemini.chat.completions.create({
+        model: model,
         messages: [
           {
             role: 'system',
@@ -95,16 +97,16 @@ export async function generateInvestmentRecommendation(
 
       const content = completion.choices[0]?.message?.content;
       if (!content) {
-        console.error('OpenAI returned empty response');
-        throw new Error('No response from OpenAI API');
+        console.error('Gemini returned empty response');
+        throw new Error('No response from Gemini API');
       }
 
-      console.log('OpenAI response received, parsing...');
+      console.log('Gemini response received, parsing...');
       const recommendation = parseInvestmentRecommendation(content, data);
       return recommendation;
     } catch (apiError: any) {
       // Log detailed error information
-      console.error('OpenAI API Error Details:', {
+      console.error('Gemini API Error Details:', {
         status: apiError?.status,
         statusText: apiError?.statusText,
         message: apiError?.message,
@@ -113,12 +115,12 @@ export async function generateInvestmentRecommendation(
         error: apiError?.error,
       });
       
-      // If gpt-4o fails, try gpt-4-turbo as fallback
+      // If gemini-2.0-flash-exp fails, try gemini-1.5-pro as fallback
       if (apiError?.status === 404 || apiError?.message?.includes('model') || apiError?.code === 'model_not_found') {
-        console.log('gpt-4o not available, trying gpt-4-turbo...');
+        console.log('gemini-2.0-flash-exp not available, trying gemini-1.5-pro...');
         try {
-          const completion = await openai.chat.completions.create({
-            model: 'gpt-4-turbo',
+          const completion = await gemini.chat.completions.create({
+            model: 'gemini-1.5-pro',
             messages: [
               {
                 role: 'system',
@@ -136,7 +138,7 @@ export async function generateInvestmentRecommendation(
           
           const content = completion.choices[0]?.message?.content;
           if (!content) {
-            throw new Error('No response from OpenAI API');
+            throw new Error('No response from Gemini API');
           }
           
           const recommendation = parseInvestmentRecommendation(content, data);
@@ -153,20 +155,20 @@ export async function generateInvestmentRecommendation(
       throw apiError;
     }
   } catch (error) {
-    console.error('OpenAI Investment Advisor error:', error);
+    console.error('Gemini Investment Advisor error:', error);
     
     // Provide more specific error messages
     if (error instanceof Error) {
       if (error.message.includes('API key')) {
-        throw new Error('Invalid OpenAI API key. Please check your OPENAI_API_KEY environment variable.');
+        throw new Error('Invalid Gemini API key. Please check your GEMINI_API_KEY environment variable.');
       }
       if (error.message.includes('rate limit')) {
-        throw new Error('OpenAI API rate limit exceeded. Please try again later.');
+        throw new Error('Gemini API rate limit exceeded. Please try again later.');
       }
       if (error.message.includes('model')) {
-        throw new Error('OpenAI model not available. Please check your API access.');
+        throw new Error('Gemini model not available. Please check your API access.');
       }
-      throw new Error(`OpenAI API error: ${error.message}`);
+      throw new Error(`Gemini API error: ${error.message}`);
     }
     
     throw new Error('Failed to generate investment recommendation: Unknown error');
@@ -189,13 +191,13 @@ export async function chatWithAssistant(
   const systemPrompt = buildChatAssistantSystemPrompt(propertyData);
 
   // Validate API key
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error('OPENAI_API_KEY is not configured');
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error('GEMINI_API_KEY is not configured');
   }
 
   try {
     // Initialize client with current API key
-    const openai = getOpenAIClient();
+    const gemini = getGeminiClient();
     
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
       {
@@ -212,8 +214,8 @@ export async function chatWithAssistant(
       },
     ];
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o', // GPT-4 Optimized
+    const completion = await gemini.chat.completions.create({
+      model: 'gemini-2.0-flash-exp', // Gemini 2.0 Flash
       messages,
       temperature: 0.7, // Slightly higher for conversational tone
       max_tokens: 1000,
@@ -221,12 +223,12 @@ export async function chatWithAssistant(
 
     const content = completion.choices[0]?.message?.content;
     if (!content) {
-      throw new Error('No response from OpenAI');
+      throw new Error('No response from Gemini');
     }
 
     return content;
   } catch (error) {
-    console.error('OpenAI Chat Assistant error:', error);
+    console.error('Gemini Chat Assistant error:', error);
     throw new Error('Failed to get AI response');
   }
 }
