@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>RentPax: AI-Powered Real Estate Investment Analysis Platform - Final Project Report</title>
+<title>RentPax: Real Estate Investment Analysis Platform - Final Project Report</title>
 <style>
 @page {
     size: letter;
@@ -122,7 +122,7 @@ li {
 <body>
 
 <div class="title-section">
-<h1>RentPax: AI-Powered Real Estate Investment Analysis Platform</h1>
+<h1>RentPax: Real Estate Investment Analysis Platform</h1>
 <p style="font-size: 14pt; font-weight: bold;">Final Project Report</p>
 </div>
 
@@ -133,11 +133,11 @@ li {
 </div>
 
 <div class="abstract">
-<p><span class="abstract-title">Abstract&mdash;</span>This paper presents RentPax, a comprehensive web-based real estate investment analysis platform designed to assist investors in making data-driven property investment decisions. The application integrates real-time property data from the RentCast API, advanced financial calculations including mortgage amortization, cap rate, and cash-on-cash return metrics, and artificial intelligence capabilities through Google's Gemini AI for investment recommendations. Built using modern web technologies including Next.js 14, TypeScript, PostgreSQL, and TailwindCSS, RentPax differentiates itself from existing solutions by offering a complete end-to-end solution that combines property valuation, comparable property analysis, affordability calculations based on debt-to-income ratios, 30-year financial projections, and personalized AI-driven investment advice. The platform was developed following an Agile software development methodology with iterative sprints, resulting in a production-ready application deployed on Vercel with a PostgreSQL database hosted on Railway. Testing demonstrates the system's ability to accurately calculate financial metrics and provide actionable investment insights to users.</p>
+<p><span class="abstract-title">Abstract&mdash;</span>This paper presents RentPax, a comprehensive web-based real estate investment analysis platform designed to assist investors in making data-driven property investment decisions. The application integrates real-time property data from the RentCast API and implements advanced financial calculations including mortgage amortization, cap rate, cash-on-cash return metrics, and debt-to-income based affordability analysis. Built using modern web technologies including Next.js 14, TypeScript, PostgreSQL, and TailwindCSS, RentPax differentiates itself from existing solutions by offering a complete end-to-end solution that combines property valuation, comparable property analysis, affordability calculations based on lending industry standards, 30-year financial projections with interactive data visualizations, and portfolio management capabilities. The platform was developed following an Agile software development methodology with iterative sprints, resulting in a production-ready application deployed on Vercel with a PostgreSQL database hosted on Railway. Testing demonstrates the system's ability to accurately calculate financial metrics and provide actionable investment insights to users.</p>
 </div>
 
 <div class="keywords">
-<p><strong><em>Keywords&mdash;</em></strong><em>real estate investment, property analysis, financial modeling, artificial intelligence, web application, Next.js, TypeScript, machine learning, mortgage calculation, investment recommendation system</em></p>
+<p><strong><em>Keywords&mdash;</em></strong><em>real estate investment, property analysis, financial modeling, web application, Next.js, TypeScript, mortgage calculation, portfolio management, data visualization, PropTech</em></p>
 </div>
 
 <h2>I. Introduction</h2>
@@ -146,7 +146,7 @@ li {
 
 <p>This paper introduces RentPax, an innovative web-based platform that addresses these challenges by providing instant, comprehensive real estate investment analysis. The platform integrates multiple data sources and analytical capabilities into a single, user-friendly interface that enables both novice and experienced investors to evaluate rental properties with professional-grade accuracy.</p>
 
-<p>The primary objectives of this project were to: (1) develop a scalable web application for property investment analysis, (2) implement accurate financial calculations following industry standards, (3) integrate artificial intelligence for personalized investment recommendations, (4) create an intuitive user interface accessible to users regardless of technical expertise, and (5) enable portfolio management for tracking multiple investment properties.</p>
+<p>The primary objectives of this project were to: (1) develop a scalable web application for property investment analysis, (2) implement accurate financial calculations following industry standards, (3) create an intuitive user interface accessible to users regardless of technical expertise, (4) enable portfolio management for tracking multiple investment properties, and (5) provide interactive data visualizations for 30-year financial projections.</p>
 
 <p>The remainder of this paper is organized as follows: Section II presents the literature survey and state of the art in real estate technology. Section III describes the software development process. Section IV details the system design. Section V covers the implementation. Section VI presents results and discussion. Section VII provides conclusions and future work.</p>
 
@@ -206,20 +206,20 @@ li {
 <td>Yes</td>
 </tr>
 <tr>
-<td>AI Recommendations</td>
+<td>Interactive Comps Selection</td>
 <td>No</td>
 <td>No</td>
 <td>No</td>
-<td>Limited</td>
+<td>No</td>
 <td>Yes</td>
 </tr>
 <tr>
-<td>Affordability Analysis</td>
+<td>DTI-Based Affordability</td>
 <td>Basic</td>
 <td>Basic</td>
 <td>No</td>
 <td>No</td>
-<td>DTI-Based</td>
+<td>Yes (28/36 Rule)</td>
 </tr>
 <tr>
 <td>30-Year Projections</td>
@@ -238,11 +238,19 @@ li {
 <td>Yes</td>
 </tr>
 <tr>
+<td>Interactive Charts</td>
+<td>Limited</td>
+<td>Limited</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes (4 Chart Types)</td>
+</tr>
+<tr>
 <td>Free Tier</td>
 <td>Yes</td>
 <td>Yes</td>
 <td>Limited</td>
-<td>No</td>
+<td>No ($199/mo)</td>
 <td>Yes</td>
 </tr>
 <tr>
@@ -261,35 +269,33 @@ li {
 
 <p><strong>BiggerPockets</strong> is a community-focused platform for real estate investors that provides educational content, forums, and basic calculators. While valuable for learning, their tools lack integration with real-time property data [8].</p>
 
-<p><strong>Mashvisor</strong> represents the closest competitor to RentPax, offering property analytics specifically for investors. However, Mashvisor requires expensive subscriptions starting at $199/month and does not include AI-powered recommendation features [9].</p>
+<p><strong>Mashvisor</strong> represents the closest competitor to RentPax, offering property analytics specifically for investors. However, Mashvisor requires expensive subscriptions starting at $199/month, making it inaccessible to many beginning investors [9].</p>
 
 <h3>C. Where RentPax Fits</h3>
 
 <p>RentPax addresses a gap in the market by providing professional-grade investment analysis with the following differentiating features:</p>
 
 <ol>
-<li><strong>AI-Powered Investment Recommendations:</strong> RentPax is the only platform in this comparison that integrates large language model AI (Google Gemini) to provide personalized investment recommendations with specific scores, risk assessments, and actionable suggestions [10].</li>
+<li><strong>DTI-Based Affordability Analysis:</strong> Unlike competitors that provide basic affordability calculators, RentPax implements proper debt-to-income ratio calculations following lending industry standards (28% front-end, 36% back-end DTI ratios) as specified by federal mortgage guidelines [10].</li>
 
-<li><strong>DTI-Based Affordability Analysis:</strong> Unlike competitors that provide basic affordability calculators, RentPax implements proper debt-to-income ratio calculations following lending industry standards (28% front-end, 36% back-end DTI ratios) as specified by federal mortgage guidelines [11].</li>
+<li><strong>Interactive Comparable Property Selection:</strong> Users can select specific comparable properties to customize rent estimates, providing more accurate analysis than automated-only approaches. This feature is unique among the analyzed competitors.</li>
 
-<li><strong>Comprehensive Free Tier:</strong> While competitors like Mashvisor charge premium prices, RentPax provides complete functionality without requiring paid subscriptions.</li>
+<li><strong>Comprehensive Free Tier:</strong> While competitors like Mashvisor charge premium prices ($199/month), RentPax provides complete functionality without requiring paid subscriptions, democratizing access to professional investment analysis tools.</li>
 
-<li><strong>Interactive Comparable Analysis:</strong> Users can select specific comparable properties to customize rent estimates, providing more accurate analysis than automated-only approaches.</li>
+<li><strong>Multi-Tier Fallback Architecture:</strong> The platform gracefully handles missing data through a multi-tier fallback system for property photos (RentCast -> Google Street View -> Mapbox -> Unsplash), ensuring functionality even without premium API access.</li>
 
-<li><strong>Multi-Fallback Architecture:</strong> The platform gracefully handles missing data through a multi-tier fallback system, ensuring functionality even without premium API access.</li>
+<li><strong>Rich Data Visualization:</strong> Four distinct chart types (cash flow breakdown, ROI pie chart, expense distribution, and 30-year projection line chart) provide comprehensive visual analysis not available in most competing free tools.</li>
 </ol>
 
-<h3>D. Artificial Intelligence in Real Estate</h3>
+<h3>D. Financial Analysis Standards</h3>
 
-<p>The application of artificial intelligence in real estate has grown significantly with advances in machine learning and natural language processing. Chen et al. [12] demonstrated that AI-based property valuation models can achieve accuracy comparable to human appraisers. More recently, large language models (LLMs) have been applied to provide contextual analysis and recommendations in financial domains [13].</p>
-
-<p>RentPax leverages Google's Gemini AI model to analyze property metrics and generate investment recommendations. This approach goes beyond simple algorithmic scoring by providing natural language explanations of strengths, risks, and specific suggestions tailored to each property.</p>
+<p>The accuracy of financial calculations is critical for investment decisions. RentPax implements industry-standard formulas for mortgage amortization, cap rate calculation, and cash-on-cash return analysis as documented by the Consumer Financial Protection Bureau and real estate investment literature [10][11].</p>
 
 <h2>III. Software Development Process</h2>
 
 <h3>A. Agile Methodology Overview</h3>
 
-<p>The development of RentPax followed an Agile software development methodology, specifically an adapted Scrum framework suitable for a two-person team. Agile was selected over traditional waterfall methodology due to its flexibility in accommodating changing requirements, emphasis on iterative development, and suitability for web application projects where user feedback is essential [14].</p>
+<p>The development of RentPax followed an Agile software development methodology, specifically an adapted Scrum framework suitable for a two-person team. Agile was selected over traditional waterfall methodology due to its flexibility in accommodating changing requirements, emphasis on iterative development, and suitability for web application projects where user feedback is essential [12].</p>
 
 <p>The Agile principles applied in this project included:</p>
 <ul>
@@ -365,23 +371,23 @@ li {
 <p><strong>Sprint Retrospective:</strong> Visualization significantly improved user experience. Mobile responsiveness needs attention.</p>
 </div>
 
-<h4>Sprint 5: AI Integration and Portfolio Management (2 weeks)</h4>
+<h4>Sprint 5: Portfolio Management and User Features (2 weeks)</h4>
 <div class="sprint-box">
-<p><strong>Sprint Goal:</strong> Integrate AI recommendations and implement portfolio management</p>
+<p><strong>Sprint Goal:</strong> Implement portfolio management and enhance user experience</p>
 <p><strong>User Stories Completed:</strong></p>
 <ul>
-<li>As a user, I want AI-powered investment recommendations so that I get expert-level guidance</li>
 <li>As a user, I want to save properties to my portfolio so that I can track multiple investments</li>
 <li>As a user, I want to see portfolio summary statistics so that I understand my overall investment position</li>
-<li>As a user, I want to chat with an AI assistant so that I can ask investment questions</li>
+<li>As a user, I want to edit and delete saved properties so that I can manage my portfolio</li>
+<li>As a user, I want to save my income profile so that affordability is calculated automatically</li>
 </ul>
-<p><strong>Deliverables:</strong> Gemini AI integration, investment recommendation API, portfolio CRUD operations, portfolio dashboard, AI chat interface</p>
-<p><strong>Sprint Retrospective:</strong> AI integration required multiple iterations to optimize prompts. Rate limiting handling added.</p>
+<p><strong>Deliverables:</strong> Portfolio CRUD operations, portfolio dashboard with summary statistics, property editing modal, income profile management</p>
+<p><strong>Sprint Retrospective:</strong> Portfolio features completed successfully. Export functionality identified as priority.</p>
 </div>
 
-<h4>Sprint 6: Testing, Optimization, and Deployment (2 weeks)</h4>
+<h4>Sprint 6: Testing, Export, and Deployment (2 weeks)</h4>
 <div class="sprint-box">
-<p><strong>Sprint Goal:</strong> Complete testing, optimize performance, and deploy to production</p>
+<p><strong>Sprint Goal:</strong> Complete testing, add export functionality, and deploy to production</p>
 <p><strong>User Stories Completed:</strong></p>
 <ul>
 <li>As a user, I want to export analysis to CSV/PDF so that I can share and archive results</li>
@@ -408,7 +414,7 @@ li {
 
 <h3>A. System Architecture Overview</h3>
 
-<p>RentPax follows a modern three-tier architecture pattern consisting of a presentation layer (React frontend), application layer (Next.js API routes), and data layer (PostgreSQL database). The system also integrates with external services including RentCast for property data and Google Gemini for AI capabilities.</p>
+<p>RentPax follows a modern three-tier architecture pattern consisting of a presentation layer (React frontend), application layer (Next.js API routes), and data layer (PostgreSQL database). The system also integrates with external services including RentCast for property data and OpenStreetMap for address geocoding.</p>
 
 <p style="text-align: center;"><strong>Fig. 1.</strong> System Architecture Block Diagram</p>
 
@@ -421,21 +427,21 @@ li {
 |  |     PRESENTATION LAYER    |          |        EXTERNAL SERVICES          |     |
 |  |       (React Frontend)    |          |                                   |     |
 |  +---------------------------+          |  +-------------+  +-------------+ |     |
-|  |                           |          |  | RentCast    |  | Google      | |     |
-|  |  +---------------------+  |          |  | API         |  | Gemini AI   | |     |
-|  |  | Pages               |  |          |  | - AVM       |  | - Recommend | |     |
-|  |  | - Home (Analysis)   |  |          |  | - Rent Est  |  | - Chat      | |     |
-|  |  | - Portfolio         |  |          |  | - Comps     |  +-------------+ |     |
-|  |  | - Login/Register    |  |          |  +-------------+                  |     |
+|  |                           |          |  | RentCast    |  | OpenStreet  | |     |
+|  |  +---------------------+  |          |  | API         |  | Map         | |     |
+|  |  | Pages               |  |          |  | - AVM       |  | - Geocoding | |     |
+|  |  | - Home (Analysis)   |  |          |  | - Rent Est  |  | - Address   | |     |
+|  |  | - Portfolio         |  |          |  | - Comps     |  |   Search    | |     |
+|  |  | - Login/Register    |  |          |  +-------------+  +-------------+ |     |
 |  |  +---------------------+  |          |                                   |     |
 |  |           |               |          |  +-------------+  +-------------+ |     |
-|  |  +---------------------+  |          |  | OpenStreet  |  | Google Maps | |     |
-|  |  | Components          |  |          |  | Map         |  | Street View | |     |
-|  |  | - AddressAuto       |  |          |  | - Geocode   |  | - Photos    | |     |
-|  |  | - AnalysisResults   |  |          |  | - Search    |  +-------------+ |     |
-|  |  | - CompsSelector     |  |          |  +-------------+                  |     |
-|  |  | - Charts (4 types)  |  |          +-----------------------------------+     |
-|  |  | - PropertyPhotos    |  |                        ^                          |
+|  |  +---------------------+  |          |  | Google Maps |  | Unsplash    | |     |
+|  |  | Components          |  |          |  | Street View |  | (Fallback   | |     |
+|  |  | - AddressAuto       |  |          |  | - Photos    |  |  Photos)    | |     |
+|  |  | - AnalysisResults   |  |          |  +-------------+  +-------------+ |     |
+|  |  | - CompsSelector     |  |          +-----------------------------------+     |
+|  |  | - Charts (4 types)  |  |                        ^                          |
+|  |  | - PropertyPhotos    |  |                        |                          |
 |  |  | - SettingsDrawer    |  |                        |                          |
 |  |  +---------------------+  |                        |                          |
 |  +------------|--------------+                        |                          |
@@ -450,15 +456,15 @@ li {
 |  |  | API Endpoints       |  |          |         SERVICES LAYER            |     |
 |  |  | - /api/analyze      |  |          +-----------------------------------+     |
 |  |  | - /api/portfolio/*  |  |          |  +-------------+  +-------------+ |     |
-|  |  | - /api/ai/*         |  |--------->|  | rentcast.ts |  | ai.ts       | |     |
-|  |  | - /api/auth/*       |  |          |  | - fetch     |  | - recommend | |     |
-|  |  | - /api/profile      |  |          |  | - search    |  | - chat      | |     |
+|  |  | - /api/auth/*       |  |--------->|  | rentcast.ts |  | export.ts   | |     |
+|  |  | - /api/profile      |  |          |  | - fetch     |  | - CSV       | |     |
+|  |  | - /api/register     |  |          |  | - search    |  | - PDF       | |     |
 |  |  +---------------------+  |          |  +-------------+  +-------------+ |     |
 |  |           |               |          |                                   |     |
 |  |  +---------------------+  |          |  +-------------+  +-------------+ |     |
-|  |  | Libraries           |  |          |  | export.ts   |  | portfolio.ts| |     |
-|  |  | - finance.ts        |  |          |  | - CSV       |  | - CRUD ops  | |     |
-|  |  | - projections.ts    |  |          |  | - PDF       |  +-------------+ |     |
+|  |  | Libraries           |  |          |  | photos.ts   |  | portfolio.ts| |     |
+|  |  | - finance.ts        |  |          |  | - fetch     |  | - CRUD ops  | |     |
+|  |  | - projections.ts    |  |          |  | - fallback  |  +-------------+ |     |
 |  |  +---------------------+  |          |  +-------------+                  |     |
 |  +------------|--------------+          +-----------------------------------+     |
 |               |                                                                   |
@@ -502,10 +508,10 @@ li {
               |                               |                               |
               v                               v                               v
 +-------------+-------------+   +-------------+-------------+   +-------------+-------------+
-|     POST /api/analyze     |   |   RentCast API Service    |   |    AI Service (ai.ts)     |
-|  - Validate inputs        |   |  - fetchRentCastWithComps |   |  - generateInvestment     |
-|  - Call RentCast          |   |  - searchAddresses        |   |    Recommendation         |
-|  - Calculate finances     |   |  - Multi-tier fallback    |   |  - chatWithAssistant      |
+|     POST /api/analyze     |   |   RentCast API Service    |   |   Export Service          |
+|  - Validate inputs        |   |  - fetchRentCastWithComps |   |  - exportToCSV()          |
+|  - Call RentCast          |   |  - searchAddresses        |   |  - exportToPDF()          |
+|  - Calculate finances     |   |  - Multi-tier fallback    |   |                           |
 +-------------+-------------+   +---------------------------+   +---------------------------+
               |
               v
@@ -515,6 +521,14 @@ li {
 |  - amortizedPI()          |
 |  - calcFinance()          |
 |  - calcAffordability()    |
++-------------+-------------+
+              |
+              v
++-------------+-------------+
+|  Projections Library      |
+|  (src/lib/projections.ts) |
+|  - calcProjections()      |
+|  - 30-year modeling       |
 +-------------+-------------+
               |
               v
@@ -610,18 +624,6 @@ v                   v                   v                   v                   
 <td>Individual property operations</td>
 <td>Required</td>
 </tr>
-<tr>
-<td>/api/ai/investment-advisor</td>
-<td>POST</td>
-<td>AI investment recommendations</td>
-<td>Optional</td>
-</tr>
-<tr>
-<td>/api/ai/chat</td>
-<td>POST</td>
-<td>AI chat assistant</td>
-<td>Optional</td>
-</tr>
 </table>
 
 <h3>E. Security Design</h3>
@@ -650,9 +652,10 @@ v                   v                   v                   v                   
 <li><strong>Styling:</strong> TailwindCSS 3.4.9 for responsive design</li>
 <li><strong>Database:</strong> PostgreSQL with Prisma 5.18.0 ORM</li>
 <li><strong>Authentication:</strong> NextAuth.js 5.0.0-beta.20</li>
-<li><strong>Charts:</strong> Recharts 2.12.7</li>
-<li><strong>AI:</strong> @google/generative-ai 0.24.1</li>
-<li><strong>Export:</strong> PapaParse 5.4.1 (CSV), @react-pdf/renderer 3.4.4 (PDF)</li>
+<li><strong>Charts:</strong> Recharts 2.12.7 for data visualization</li>
+<li><strong>Export:</strong> PapaParse 5.4.1 (CSV), HTML-based PDF generation</li>
+<li><strong>Validation:</strong> Zod 4.1.13 for schema validation</li>
+<li><strong>Icons:</strong> Lucide React 0.400.0</li>
 </ul>
 
 <h3>B. Function Reference Table</h3>
@@ -712,19 +715,6 @@ v                   v                   v                   v                   
 <td>Multi-tier photo fetching with fallback (RentCast -> Google -> Mapbox -> Unsplash)</td>
 </tr>
 <tr>
-<td colspan="3" style="background-color: #e0e0e0;"><strong>AI Service (src/services/ai.ts)</strong></td>
-</tr>
-<tr>
-<td>generateInvestmentRecommendation()</td>
-<td>ai.ts:25</td>
-<td>Generates AI-powered investment analysis with score, recommendation, strengths, and risks</td>
-</tr>
-<tr>
-<td>chatWithAssistant()</td>
-<td>ai.ts:95</td>
-<td>Handles conversational AI chat with context-aware responses</td>
-</tr>
-<tr>
 <td colspan="3" style="background-color: #e0e0e0;"><strong>Export Service (src/services/export.ts)</strong></td>
 </tr>
 <tr>
@@ -779,9 +769,9 @@ v                   v                   v                   v                   
 <td>User profile CRUD operations</td>
 </tr>
 <tr>
-<td>POST /api/ai/investment-advisor</td>
-<td>api/ai/investment-advisor/route.ts</td>
-<td>AI recommendation endpoint with retry logic</td>
+<td>GET/POST /api/portfolio</td>
+<td>api/portfolio/route.ts</td>
+<td>Portfolio listing and property saving</td>
 </tr>
 <tr>
 <td colspan="3" style="background-color: #e0e0e0;"><strong>React Components</strong></td>
@@ -804,12 +794,17 @@ v                   v                   v                   v                   
 <tr>
 <td>PropertyPhotos</td>
 <td>components/PropertyPhotos.tsx</td>
-<td>Property image gallery with carousel</td>
+<td>Property image gallery with fallback handling</td>
 </tr>
 <tr>
 <td>SettingsDrawer</td>
 <td>components/SettingsDrawer.tsx</td>
 <td>Customizable expense assumption panel</td>
+</tr>
+<tr>
+<td>ProjectionsView</td>
+<td>components/ProjectionsView.tsx</td>
+<td>30-year projection display with chart</td>
 </tr>
 <tr>
 <td>CashFlowChart</td>
@@ -886,22 +881,13 @@ v                   v                   v                   v                   
                                                     |  Return AnalysisData   |
                                                     +-----------+------------+
                                                                 |
-              +-----------+-----------+-----------+-------------+
-              |           |           |           |             |
-              v           v           v           v             v
-+-------------+  +--------+--+  +-----+------+  +-+----------+  +------------+
-|AnalysisRes. |  |Property   |  |CompsSelect |  |Charts (4)  |  |AI Advisor  |
-|  Component  |  |Photos     |  |            |  |            |  |  (async)   |
-+-------------+  +-----------+  +------------+  +------------+  +------------+
-                                                                       |
-                                                                       v
-                                                    +------------------------+
-                                                    | generateInvestment     |
-                                                    | Recommendation()       |
-                                                    |   - Gemini API call    |
-                                                    |   - Parse response     |
-                                                    |   - Calculate returns  |
-                                                    +------------------------+
+              +-------------------------------------------------+
+              |                   |                   |         |
+              v                   v                   v         v
++---------------+  +---------------+  +---------------+  +---------------+
+| Analysis      |  | Property      |  | Comps         |  | Charts &      |
+| Results       |  | Photos        |  | Selector      |  | Projections   |
++---------------+  +---------------+  +---------------+  +---------------+
 </div>
 
 <h3>D. Key Algorithm Implementation</h3>
@@ -946,8 +932,8 @@ export function amortizedPI(loan: number, annualRate: number, years: number): nu
 <ul>
 <li><strong>Initial Page Load:</strong> &lt; 2 seconds (with Vercel edge caching)</li>
 <li><strong>Property Analysis Request:</strong> 1-3 seconds (depending on RentCast API response)</li>
-<li><strong>AI Recommendation Generation:</strong> 2-5 seconds (Gemini API dependent)</li>
 <li><strong>Database Operations:</strong> &lt; 100ms (Prisma optimized queries)</li>
+<li><strong>Chart Rendering:</strong> &lt; 500ms (Recharts with React optimization)</li>
 </ul>
 
 <h3>B. Calculation Accuracy Validation</h3>
@@ -1011,15 +997,17 @@ export function amortizedPI(loan: number, annualRate: number, years: number): nu
 <p>Through implementation and testing, RentPax demonstrated the following advantages over existing solutions:</p>
 
 <ol>
-<li><strong>All-in-One Solution:</strong> Combines property valuation, financial analysis, AI recommendations, and portfolio management in a single platform, eliminating the need for multiple tools.</li>
-
-<li><strong>AI-Powered Insights:</strong> The integration of Google Gemini AI provides human-like investment analysis that considers multiple factors and provides actionable recommendations&mdash;a feature not available in competing products.</li>
+<li><strong>All-in-One Solution:</strong> Combines property valuation, financial analysis, data visualization, and portfolio management in a single platform, eliminating the need for multiple tools.</li>
 
 <li><strong>Accurate DTI-Based Affordability:</strong> Implementation of proper 28/36 DTI ratios provides more accurate affordability assessment than competitors' basic calculators.</li>
 
-<li><strong>Free Access:</strong> Full functionality available without subscription fees, making professional-grade analysis accessible to all investors.</li>
+<li><strong>Free Access:</strong> Full functionality available without subscription fees, making professional-grade analysis accessible to all investors. Competitors like Mashvisor charge $199/month for similar features.</li>
 
-<li><strong>Real Property Data:</strong> Integration with RentCast API provides actual market data rather than estimates, and interactive comparable selection allows user customization.</li>
+<li><strong>Interactive Comparable Selection:</strong> Users can select specific comparable properties to customize rent estimates&mdash;a feature not available in competing platforms.</li>
+
+<li><strong>Real Property Data:</strong> Integration with RentCast API provides actual market data rather than estimates.</li>
+
+<li><strong>Comprehensive Visualization:</strong> Four distinct chart types provide deeper insights than competitors' limited visualizations.</li>
 
 <li><strong>Graceful Degradation:</strong> Multi-tier fallback system ensures application functionality even when external services are unavailable.</li>
 </ol>
@@ -1031,23 +1019,24 @@ export function amortizedPI(loan: number, annualRate: number, years: number): nu
 <ul>
 <li><strong>API Dependency:</strong> Accuracy depends on RentCast API data availability and quality</li>
 <li><strong>Geographic Coverage:</strong> Currently limited to US properties covered by RentCast</li>
-<li><strong>AI Rate Limits:</strong> Gemini API has rate limits that may affect heavy usage</li>
 <li><strong>Market Assumptions:</strong> 30-year projections assume constant appreciation and rent growth rates</li>
+<li><strong>Photo Availability:</strong> Property photos may not be available for all addresses</li>
 </ul>
 
 <h2>VII. Conclusion and Future Work</h2>
 
 <h3>A. Conclusion</h3>
 
-<p>This project successfully developed RentPax, a comprehensive real estate investment analysis platform that addresses gaps in the current market. The application integrates property valuation, financial calculations, AI-powered recommendations, and portfolio management into a single, accessible web application.</p>
+<p>This project successfully developed RentPax, a comprehensive real estate investment analysis platform that addresses gaps in the current market. The application integrates property valuation, financial calculations, interactive data visualization, and portfolio management into a single, accessible web application.</p>
 
 <p>Key accomplishments include:</p>
 <ul>
 <li>Implementation of accurate financial calculations following industry standards</li>
-<li>Integration of Google Gemini AI for personalized investment recommendations</li>
-<li>Development of a responsive, user-friendly interface</li>
+<li>Development of a responsive, user-friendly interface with four distinct chart types</li>
+<li>Integration with RentCast API for real-time property data</li>
 <li>Successful deployment to production with PostgreSQL database</li>
 <li>Creation of a multi-tier fallback system for reliability</li>
+<li>Implementation of DTI-based affordability analysis using lending industry standards</li>
 </ul>
 
 <p>The Agile development methodology proved effective for this project, allowing iterative refinement based on testing and enabling the team to adapt to challenges encountered during development.</p>
@@ -1057,6 +1046,7 @@ export function amortizedPI(loan: number, annualRate: number, years: number): nu
 <p>Several enhancements are planned for future development:</p>
 
 <ol>
+<li><strong>AI-Powered Investment Recommendations:</strong> Integrate large language model AI to provide personalized investment recommendations with risk assessments and actionable suggestions</li>
 <li><strong>Machine Learning Price Prediction:</strong> Implement custom ML models for property value and rent prediction</li>
 <li><strong>Market Analytics:</strong> Add neighborhood-level market trend analysis</li>
 <li><strong>Mobile Application:</strong> Develop native iOS and Android applications</li>
@@ -1085,21 +1075,17 @@ export function amortizedPI(loan: number, annualRate: number, years: number): nu
 
 <div class="reference">[9] Mashvisor, "Real Estate Investment Analytics Platform," 2024. [Online]. Available: https://www.mashvisor.com/</div>
 
-<div class="reference">[10] Google, "Gemini AI Model Documentation," Google DeepMind, 2024. [Online]. Available: https://deepmind.google/technologies/gemini/</div>
+<div class="reference">[10] Consumer Financial Protection Bureau, "Qualified Mortgage Definition Under the Truth in Lending Act," CFPB, 12 CFR Part 1026, 2021.</div>
 
-<div class="reference">[11] Consumer Financial Protection Bureau, "Qualified Mortgage Definition Under the Truth in Lending Act," CFPB, 12 CFR Part 1026, 2021.</div>
+<div class="reference">[11] F. Fabozzi, "The Handbook of Mortgage-Backed Securities," 7th ed., Oxford University Press, 2016.</div>
 
-<div class="reference">[12] Y. Chen, J. Wu, and H. Liu, "Deep learning for real estate valuation," <em>Expert Systems with Applications</em>, vol. 168, pp. 114285, 2021.</div>
+<div class="reference">[12] K. Schwaber and J. Sutherland, "The Scrum Guide," Scrum.org, 2020. [Online]. Available: https://scrumguides.org/</div>
 
-<div class="reference">[13] A. Vaswani et al., "Attention is all you need," <em>Advances in Neural Information Processing Systems</em>, vol. 30, 2017.</div>
+<div class="reference">[13] Next.js Documentation, "Getting Started with Next.js," Vercel Inc., 2024. [Online]. Available: https://nextjs.org/docs</div>
 
-<div class="reference">[14] K. Schwaber and J. Sutherland, "The Scrum Guide," Scrum.org, 2020. [Online]. Available: https://scrumguides.org/</div>
+<div class="reference">[14] Prisma, "Prisma ORM Documentation," Prisma Data Inc., 2024. [Online]. Available: https://www.prisma.io/docs</div>
 
-<div class="reference">[15] Next.js Documentation, "Getting Started with Next.js," Vercel Inc., 2024. [Online]. Available: https://nextjs.org/docs</div>
-
-<div class="reference">[16] Prisma, "Prisma ORM Documentation," Prisma Data Inc., 2024. [Online]. Available: https://www.prisma.io/docs</div>
-
-<div class="reference">[17] RentCast, "RentCast API Documentation," RentCast Inc., 2024. [Online]. Available: https://developers.rentcast.io/</div>
+<div class="reference">[15] RentCast, "RentCast API Documentation," RentCast Inc., 2024. [Online]. Available: https://developers.rentcast.io/</div>
 
 <div class="page-break"></div>
 
@@ -1108,13 +1094,16 @@ export function amortizedPI(loan: number, annualRate: number, years: number): nu
 <p>The following describes key screens in the RentPax application:</p>
 
 <h4>A.1 Main Analysis Screen</h4>
-<p>The main analysis screen provides address input with autocomplete, income and assumption settings, and displays comprehensive property analysis results including property photos, financial metrics, comparable properties, and charts.</p>
+<p>The main analysis screen provides address input with autocomplete, income and assumption settings, and displays comprehensive property analysis results including property photos, financial metrics, comparable properties, and interactive charts.</p>
 
 <h4>A.2 Portfolio Dashboard</h4>
 <p>The portfolio dashboard shows all saved properties with summary statistics (total value, total cash flow, average cap rate) and individual property cards with edit/delete capabilities.</p>
 
-<h4>A.3 AI Investment Recommendation</h4>
-<p>The AI recommendation panel displays the investment score (1-10), overall recommendation, key strengths and risks, actionable suggestions, and projected returns.</p>
+<h4>A.3 Financial Charts</h4>
+<p>Four interactive charts provide visual analysis: (1) Cash Flow Chart showing income vs. expenses, (2) ROI Chart displaying cap rate and cash-on-cash return, (3) Expense Breakdown showing cost distribution, and (4) 30-Year Projection Chart showing long-term financial outlook.</p>
+
+<h4>A.4 Comparable Properties Selector</h4>
+<p>The comparable properties panel allows users to interactively select specific properties to include in rent analysis, with the ability to calculate average rent from selected comparables.</p>
 
 <h2>Appendix B: Source Code Location</h2>
 
@@ -1122,16 +1111,18 @@ export function amortizedPI(loan: number, annualRate: number, years: number): nu
 <ul>
 <li><strong>Repository:</strong> GitHub (private repository)</li>
 <li><strong>Live Demo:</strong> https://rentpaxmvpplus.vercel.app</li>
-<li><strong>Total Lines of Code:</strong> Approximately 2,584 lines of TypeScript/TSX</li>
+<li><strong>Total Lines of Code:</strong> Approximately 2,200 lines of TypeScript/TSX</li>
 </ul>
 
 <p>Key source files:</p>
 <ul>
-<li>src/app/page.tsx - Main application page (380 lines)</li>
+<li>src/app/page.tsx - Main application page (273 lines)</li>
 <li>src/lib/finance.ts - Financial calculations library (95 lines)</li>
+<li>src/lib/projections.ts - 30-year projection calculations (80 lines)</li>
 <li>src/services/rentcast.ts - RentCast API integration (220 lines)</li>
-<li>src/services/ai.ts - AI service integration (150 lines)</li>
-<li>src/components/ - React components (1,200+ lines total)</li>
+<li>src/services/export.ts - CSV/PDF export functionality (85 lines)</li>
+<li>src/services/portfolio.ts - Portfolio CRUD operations (65 lines)</li>
+<li>src/components/ - React components (1,100+ lines total)</li>
 </ul>
 
 </body>
